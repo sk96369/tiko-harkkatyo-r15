@@ -6,8 +6,8 @@ public class ht2019{
 	private static final String PALVELIN = "dbstud2.sis.uta.fi";
 	private static final int PORTTI = 5432;
 	private static final String TIETOKANTA = "tiko2019r15"; 
-	private static final String KAYTTAJA = "tp427552";
-	private static final String SALASANA = "tuomas";
+	private static final String KAYTTAJA = "OMA PPT";
+	private static final String SALASANA = "OMA SALASANA";
 	
 	public static void main(String args[]) {
 		Connection con = null;
