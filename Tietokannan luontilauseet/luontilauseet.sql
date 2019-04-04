@@ -5,6 +5,11 @@ nimi VARCHAR(50) NOT NULL,				--Asiakkaan nimi
 laskutusosoite VARCHAR(50) NOT NULL,	--Asiakkaan laskutusosoite
 PRIMARY KEY(asiakasid));
 
+INSERT INTO asiakas VALUES
+(11, 'Ville Viima', 'Tammelankatu 55'),
+(22, 'Jussi Joki', 'Vellamonkatu 10'),
+(33, 'Pekka Puska', 'Käypytie 13'),
+(44, 'Jenni Joki', 'Kannaksenkatu 43');
 
 CREATE TABLE työkohde(
 kohdeid INT NOT NULL,					--Kohteen tunnus
@@ -15,6 +20,12 @@ kvkelpoinen BOOLEAN NOT NULL,			--Onko kohde kotitalousvähennyskelpoinen. True=
 PRIMARY KEY(kohdeid),
 FOREIGN KEY(asiakasid) REFERENCES asiakas);
 
+INSERT INTO työkohde VALUES
+(111, 11, 'Oma asunto', 'Tammelankatu 55', true),
+(112, 11, 'Varastohalli', 'Mattilankatu 10', false),
+(221, 22, 'Kesämökki', 'Leppästentie 88', true),
+(331, 33, 'Oma asunto', 'Käpytie 13', true),
+(441, 44, 'Isovanhempien asunto', 'Kannaksenkatu 44', true)
 
 CREATE TABLE suorite(					--Työsuoitetta kuvaava taulu
 suoriteid INT NOT NULL,					--Työsuoritteen tunnus
@@ -22,6 +33,7 @@ kohdeid INT NOT NULL,					--Kohteen tunnus
 PRIMARY KEY(suoriteid),
 FOREIGN KEY(kohdeid) REFERENCES työkohde);
 
+INSERT INTO suorite VALUES
 
 CREATE TABLE tarvike(
 tarvikeid INT NOT NULL,					--Tarvikkeen tunnus
