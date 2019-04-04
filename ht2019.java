@@ -12,9 +12,9 @@ public class ht2019{
 	
 	public static void listaaAsiakkaat(Connection con){
 		try {
-			PreparedStatement pst=con.prepareStatement("SELECT * FROM asiakkaat");
+			PreparedStatement pst=con.prepareStatement("SELECT * FROM asiakas");
 			ResultSet adata=pst.executeQuery();
-			System.out.println("Asiakastiedot:");
+			System.out.println("Asiakastiedot: ");
 			while(adata.next()){
 				System.out.println(adata.getInt(1)+";"+adata.getString(2)+";"+adata.getString(3));
 			}
@@ -45,7 +45,7 @@ public class ht2019{
 				pst.setString(3, aosoite);
 				pst.executeUpdate();
 				pst.close();
-				System.out.println("Uusi asiakas lisätty.");
+				System.out.println("Uusi asiakas lisÃ¤tty.");
 			}
 			catch(SQLException exc) {
 				System.out.println("tapahtui virhe: "+exc.getMessage());
@@ -57,23 +57,23 @@ public class ht2019{
 	public static void lisaaTyokohde(Connection con){
 		Scanner sc=new Scanner(System.in);
 		listaaAsiakkaat(con);
-		System.out.print("Työkohteen omistajan tunnus:");
-		String tunnus1=sc.next();
-		System.out.print("Työkohteen tunnus:");
-		String tunnus2=sc.next();
-		System.out.print("Työkohteen nimi:");
-		String tknimi=sc.next();
-		System.out.print("Työkohteen osoite:");
-		String tkosoite=sc.next();
-		System.out.print("Kotitalousvähennys? 1/0:");
-		String kvkelpoinen=sc.next();
+		System.out.print("TyÃ¶kohteen omistajan tunnus:");
+		String tunnus1=sc.nextLine();
+		System.out.print("TyÃ¶kohteen tunnus:");
+		String tunnus2=sc.nextLine();
+		System.out.print("TyÃ¶kohteen nimi:");
+		String tknimi=sc.nextLine();
+		System.out.print("TyÃ¶kohteen osoite:");
+		String tkosoite=sc.nextLine();
+		System.out.print("KotitalousvÃ¤hennys? true/false:");
+		String kvkelpoinen=sc.nextLine();
 		
 		Integer atunnus=typeCaster.toInt(tunnus1);
 		Integer tktunnus=typeCaster.toInt(tunnus2);
 		Boolean kvk=typeCaster.toBoolean(kvkelpoinen);
 		if(atunnus!=null && tktunnus!=null && kvk!=null) {
 			try {
-				PreparedStatement pst=con.prepareStatement("INSERT INTO työkohde(kohdeid, asiakasid, nimi, osoite, kvkelpoinen) VALUES"
+				PreparedStatement pst=con.prepareStatement("INSERT INTO tyÃ¶kohde(kohdeid, asiakasid, nimi, osoite, kvkelpoinen) VALUES"
 												   +"(?,?,?,?,?)");
 				pst.setInt(1,  tktunnus);
 				pst.setInt(2, atunnus);
@@ -82,7 +82,7 @@ public class ht2019{
 				pst.setBoolean(5, kvk);
 				pst.executeUpdate();
 				pst.close();
-				System.out.println("Uusi asiakas lisätty.");
+				System.out.println("Uusi tyÃ¶kohde lisÃ¤tty.");
 				
 			}
 			catch(SQLException exc) {
