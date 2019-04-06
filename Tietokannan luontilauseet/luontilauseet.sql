@@ -52,7 +52,10 @@ INSERT INTO tarvike VALUES
 (345, 'ABB Jussi uppopistorasia', 12.90, 'kpl', 20),
 (567, 'ABB nysä M16 20kpl', 7.99, 'kpl', 10),
 (789, 'MCMK maakaapeli', 1.5, 'metri', 200),
-(999, 'MMJ 3x1,5 asennuskaapeli', 0.77, 'metri', 100);
+(999, 'MMJ 3x1,5 asennuskaapeli', 0.77, 'metri', 100)
+(100, 'Yleissulake 10A 500V', 0.40, 'kpl', 50),
+(101, 'ABB Jussi pinta 6 -kytkin', 8.99, 'kpl', 20),
+(102, 'Airam Naulakiinnike TC 10-14', 0.08, 'kpl', 1000);
 
 
 CREATE TABLE suoritetarvike(			
