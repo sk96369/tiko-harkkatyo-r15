@@ -25,23 +25,34 @@ INSERT INTO työkohde VALUES
 (112, 11, 'Varastohalli', 'Mattilankatu 10', false),
 (221, 22, 'Kesämökki', 'Leppästentie 88', true),
 (331, 33, 'Oma asunto', 'Käpytie 13', true),
-(441, 44, 'Isovanhempien asunto', 'Kannaksenkatu 44', true)
+(441, 44, 'Isovanhempien asunto', 'Kannaksenkatu 44', true);
 
 CREATE TABLE suorite(					--Työsuoitetta kuvaava taulu
 suoriteid INT NOT NULL,					--Työsuoritteen tunnus
 kohdeid INT NOT NULL,					--Kohteen tunnus
+suoritetyyppi BOOLEAN NOT NULL,			--Suoritteen tyyppi, tuntityö=1, urakkatyö=0. (Lisätty kyselyjen helpottamiseksi)
 PRIMARY KEY(suoriteid),
 FOREIGN KEY(kohdeid) REFERENCES työkohde);
 
-INSERT INTO suorite VALUES
+INSERT INTO suorite VALUES				--Testiarvoja
+(777, 111, true),
+(888, 112, true);
+
 
 CREATE TABLE tarvike(
 tarvikeid INT NOT NULL,					--Tarvikkeen tunnus
 nimi VARCHAR(50) NOT NULL,				--Tarvikkeen nimi
-sohinta NUMERIC(3, 2) NOT NULL,			--Tarvikkeen sisäänostohinta
+sohinta NUMERIC(10, 2) NOT NULL,			--Tarvikkeen sisäänostohinta
 yksikkö VARCHAR(50) NOT NULL,			--Tarvikkeiden määrän yksikkö. Kpl/metri jne...
 varastotilanne INT NOT NULL,			--Tarvikkeen varastotilanne. Tavaraa varastossa varastotilanne*yksikkö määrä
 PRIMARY KEY(tarvikeid));
+
+INSERT INTO tarvike VALUES
+(123, 'ABB Jussi uppokytkin', 19.90, 'kpl', 20),
+(345, 'ABB Jussi uppopistorasia', 12.90, 'kpl', 20),
+(567, 'ABB nysä M16 20kpl', 7.99, 'kpl', 10),
+(789, 'MCMK maakaapeli', 1.5, 'metri', 200),
+(999, 'MMJ 3x1,5 asennuskaapeli', 0.77, 'metri', 100);
 
 
 CREATE TABLE suoritetarvike(			
@@ -55,8 +66,13 @@ FOREIGN KEY(suoriteid) REFERENCES suorite);
 
 CREATE TABLE tuntityöt(
 tyyppi CHAR(50) NOT NULL,				--Tuntityö tyyppi, suunnittelu/työ/aputyö
-hinta NUMERIC(3, 2) NOT NULL,			--Työn tuntikohtainen hinta
+hinta NUMERIC(10, 2) NOT NULL,			--Työn tuntikohtainen hinta
 PRIMARY KEY(tyyppi));
+
+INSERT INTO tuntityöt VALUES
+('Suunnittelu', 55.0),
+('Työ', 45.0),
+('Aputyö', 35.0);
 
 
 CREATE TABLE suoritetuntityöt(
@@ -66,6 +82,11 @@ määrä INT NOT NULL,						--Montako tuntia töitä kuuluu suoritteeseen
 PRIMARY KEY(suoriteid, tyyppi),
 FOREIGN KEY(suoriteid) REFERENCES suorite,
 FOREIGN KEY(tyyppi) REFERENCES tuntityöt);
+
+INSERT INTO suoritetuntityöt VALUES		--Testiarvoja
+(777, 'Suunnittelu', 2),
+(777, 'Työ', 20),
+(888, 'Työ', 10);
 
 
 CREATE TABLE urakkasopimus(				--Urakkapohjaista työtä kuvaava taulu
