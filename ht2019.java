@@ -16,7 +16,7 @@ public class ht2019{
 			ResultSet adata=pst.executeQuery();
 			System.out.println("Asiakastiedot: ");
 			while(adata.next()){
-				System.out.println(adata.getInt(1)+";"+adata.getString(2)+";"+adata.getString(3));
+				System.out.println(adata.getString(1)+"; "+adata.getString(2)+"; "+adata.getString(3));
 			}
 			pst.close();
 			adata.close();
@@ -25,6 +25,25 @@ public class ht2019{
 			System.out.println("tapahtui virhe: "+exc.getMessage());
 		}
 		
+	}
+	public static void tulostaKysely(Connection con, String kysely) {
+		try {
+			PreparedStatement pst=con.prepareStatement(kysely);
+			ResultSet rs=pst.executeQuery();
+			ResultSetMetaData meta=rs.getMetaData();
+			int colCount=meta.getColumnCount();
+			while(rs.next()){
+				for(int i=1; i<=colCount; i++) {
+					System.out.print(rs.getString(i)+"; ");
+				}
+				System.out.println();
+			}
+			pst.close();
+			rs.close();
+		}
+		catch(SQLException exc) {
+			System.out.println("tapahtui virhe: "+exc.getMessage());
+		}
 	}
 	public void lisaaUusiAsiakas(Connection con){
 		Scanner sc=new Scanner(System.in);
@@ -92,6 +111,23 @@ public class ht2019{
 		sc.close();
 		
 	}
+	public static void lisaaTuntityosuorite(Connection con) {
+		Scanner sc=new Scanner(System.in);
+		String kysely="SELECT a.nimi as asiakas, t.kohdeid, t.nimi as kohde, t.osoite "+
+				"FROM asiakas as a, työkohde as t "+
+				"where a.asiakasid=t.asiakasid";
+		System.out.println("Työkohteiden tiedot:");
+		tulostaKysely(con, kysely);
+		
+		System.out.print("Valitse työkohteen tunnus:");
+		Integer tktunnus=typeCaster.toInt(sc.nextLine());
+		if(tktunnus!=null) {
+			
+		}
+		else
+			System.out.print("Tunnus ei kelpaa, poistutaan...");
+	}
+	
 	public static Connection avaaYhteys() {
 		try {
 			Connection con = DriverManager.getConnection(PROTOKOLLA + "//" + PALVELIN + ":" + PORTTI + "/" + TIETOKANTA, KAYTTAJA, SALASANA);
@@ -118,7 +154,8 @@ public class ht2019{
 	public static void main(String args[]) {
 		Connection con = avaaYhteys();
 		
-		lisaaTyokohde(con);
+		//lisaaTyokohde(con);
+		lisaaTuntityosuorite(con);
 		
 		
 		suljeYhteys(con);
