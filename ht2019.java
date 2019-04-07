@@ -10,22 +10,8 @@ public class ht2019{
 	private static final String KAYTTAJA = "tp427552";
 	private static final String SALASANA = "tuomas";
 	
-	public static void listaaAsiakkaat(Connection con){
-		try {
-			PreparedStatement pst=con.prepareStatement("SELECT * FROM asiakas");
-			ResultSet adata=pst.executeQuery();
-			System.out.println("Asiakastiedot: ");
-			while(adata.next()){
-				System.out.println(adata.getString(1)+"; "+adata.getString(2)+"; "+adata.getString(3));
-			}
-			pst.close();
-			adata.close();
-		}
-		catch(SQLException exc) {
-			System.out.println("tapahtui virhe: "+exc.getMessage());
-		}
-		
-	}
+
+	//Metodi satunnaisen kyselyn tulostamiseen
 	public static void tulostaKysely(Connection con, String kysely) {
 		try {
 			PreparedStatement pst=con.prepareStatement(kysely);
@@ -45,18 +31,20 @@ public class ht2019{
 			System.out.println("tapahtui virhe: "+exc.getMessage());
 		}
 	}
+	//Metodi uuden asiakkaan lisäämiseksi tietokantaan.
 	public void lisaaUusiAsiakas(Connection con){
+		//Kysellään asiakkaan tiedot
 		Scanner sc=new Scanner(System.in);
 		System.out.print("Asiakkaan tunnus:");
-		String tunnus=sc.next();
+		Integer atunnus=typeCaster.toInt(sc.nextLine());	//Huom! Voisi myös generoida automaattisesti.
 		System.out.print("Asiakkaan nimi:");
-		String animi=sc.next();
+		String animi=sc.nextLine();
 		System.out.print("Asiakkaan osoite:");
-		String aosoite=sc.next();
+		String aosoite=sc.nextLine();
 		
-		Integer atunnus=typeCaster.toInt(tunnus);
 		if(atunnus!=null) {
 			try {
+				//Lisätään uusi asiakas "asiakas"-tauluun
 				PreparedStatement pst=con.prepareStatement("INSERT INTO asiakas(asiakasid, nimi, laskutusosoite) VALUES"
 														  + "(?,?,?)");
 				pst.setInt(1, atunnus);
@@ -73,25 +61,26 @@ public class ht2019{
 		sc.close();
 		
 	}
+	//Metodi työkohteen lisäämiseksi asiakkaalle
 	public static void lisaaTyokohde(Connection con){
 		Scanner sc=new Scanner(System.in);
-		listaaAsiakkaat(con);
+		//Tulostetaan kannassa olevien asiakkaiden tiedot
+		tulostaKysely(con, "SELECT*FROM asiakas");
+		//Kysellään työkohteeseen liittyvät tiedot
 		System.out.print("Työkohteen omistajan tunnus:");
-		String tunnus1=sc.nextLine();
-		System.out.print("Työkohteen tunnus:");
-		String tunnus2=sc.nextLine();
+		Integer atunnus=typeCaster.toInt(sc.nextLine());
+		System.out.print("Työkohteen tunnus:");			
+		Integer tktunnus=typeCaster.toInt(sc.nextLine());	//Huom! Voisi myös generoida automaattisesti.
 		System.out.print("Työkohteen nimi:");
 		String tknimi=sc.nextLine();
 		System.out.print("Työkohteen osoite:");
 		String tkosoite=sc.nextLine();
 		System.out.print("Kotitalousvähennys? true/false:");
-		String kvkelpoinen=sc.nextLine();
+		Boolean kvk=typeCaster.toBoolean(sc.nextLine());
 		
-		Integer atunnus=typeCaster.toInt(tunnus1);
-		Integer tktunnus=typeCaster.toInt(tunnus2);
-		Boolean kvk=typeCaster.toBoolean(kvkelpoinen);
 		if(atunnus!=null && tktunnus!=null && kvk!=null) {
 			try {
+				//Lisätään uusi työkohde
 				PreparedStatement pst=con.prepareStatement("INSERT INTO työkohde(kohdeid, asiakasid, nimi, osoite, kvkelpoinen) VALUES"
 												   +"(?,?,?,?,?)");
 				pst.setInt(1,  tktunnus);
@@ -111,21 +100,78 @@ public class ht2019{
 		sc.close();
 		
 	}
+	//Metodi tuntiyöiden lisäämiseksi työkohteelle.
 	public static void lisaaTuntityosuorite(Connection con) {
+		//Tulostetaan työkohteiden tiedot ruudulle
 		Scanner sc=new Scanner(System.in);
 		String kysely="SELECT a.nimi as asiakas, t.kohdeid, t.nimi as kohde, t.osoite "+
 				"FROM asiakas as a, työkohde as t "+
 				"where a.asiakasid=t.asiakasid";
 		System.out.println("Työkohteiden tiedot:");
 		tulostaKysely(con, kysely);
-		
-		System.out.print("Valitse työkohteen tunnus:");
-		Integer tktunnus=typeCaster.toInt(sc.nextLine());
-		if(tktunnus!=null) {
-			
+		//Kysytään käyttäjältä työkohteeseen ja tuntityöhön liittyvät tiedot.
+		System.out.print("Työkohteen tunnus:");
+		Integer tkID=typeCaster.toInt(sc.nextLine());				//tkID=työkohteen tunnus
+		System.out.print("Työn tyyppi (Suunnittelu/Työ/Aputyö):");
+		String ttyyppi=sc.nextLine();								//ttyyppi=tuntityön tyyppi
+		System.out.print("Työn määrä (tunteina):");
+		Integer tunnit=typeCaster.toInt(sc.nextLine());				//Työtuntien määrä
+		if(tkID!=null && tunnit!=null) {
+			try {
+				int suoriteID;
+				//Suoritetaan kysely, jossa tarkastetaan, onko työkohteella vielä yhtään tuntityösuoritteita
+				PreparedStatement pst=con.prepareStatement("SELECT suorite.suoriteid "+
+												   "FROM suorite WHERE suorite.kohdeid=? and suorite.suoritetyyppi=true");
+				pst.setInt(1, tkID);
+				ResultSet rs=pst.executeQuery();
+				//Jos aikaisempia tuntityösuoritteita löytyy...
+				if(rs.next()) {
+					//Haetaan aiemman kyselyn resultsetistä suoritteen tunnus.
+					suoriteID=rs.getInt(1);
+					//Suoritetaan päivitys suoritetuntityöt-tauluun. tuntityölisäys()-funktion toteutus määritelty PLfunktiot.sql tiedostossa
+					CallableStatement cst=con.prepareCall("select tuntityölisäys(?,?,?)");
+					cst.setInt(1, suoriteID);
+					cst.setString(2, ttyyppi);
+					cst.setInt(3, tunnit);
+					cst.execute();
+					cst.close();
+				}
+				//Jos aikaisempia tuntityösuoritteita ei ole...
+				else {
+					//Luodaan uusi suorite kys. työkohteelle.
+					//Uusi suoriteID luodaan generoimalla satunnainen luku väliltä [100, 999]. Pitää tehdä parempi versio myöhemmin.
+					suoriteID=(int)(Math.random()*900)+100;
+					//Lisätään uusi tuntityösuoritteista kirjaa pitävä rivi työkohteelle "suorite"-tauluun
+					pst=con.prepareStatement("INSERT INTO suorite VALUES (?,?,?)");
+					pst.setInt(1, suoriteID);
+					pst.setInt(2, tkID);
+					pst.setBoolean(3, true);//true --> Kyseessä tuntityösuorite.
+					pst.executeUpdate();
+					
+					//Lisätään uusi tuntityösuorite "suoritetuntityöt"-tauluun
+					pst=con.prepareStatement("INSERT INTO suoritetuntityöt VALUES (?,?,?)");
+					pst.setInt(1, suoriteID);
+					pst.setString(2, ttyyppi);
+					pst.setInt(3, tunnit);
+					pst.executeUpdate();
+				}
+				
+				rs.close();
+				pst.close();
+				
+			}
+			catch(SQLException exc){
+				System.out.println("tapahtui virhe: "+exc.getMessage());
+			}
 		}
-		else
-			System.out.print("Tunnus ei kelpaa, poistutaan...");
+		sc.close();
+	}
+	//KESKENERÄINEN
+	public static void lisaaTarvike(Connection con, int suoriteID) {
+		Scanner sc=new Scanner(System.in);
+		String kysely="SELECT tarvikeid, nimi, varastotilanne FROM tarvike WHERE varastotilanne>0";
+		System.out.println("Tarvikkeet varastossa:");
+		tulostaKysely(con, kysely);
 	}
 	
 	public static Connection avaaYhteys() {
@@ -136,8 +182,10 @@ public class ht2019{
 		}
 		catch(SQLException exc){
 			System.out.println("tapahtui virhe: "+exc.getMessage());
-			return null;
+			System.out.println("Suljetaan ohjelma");
+			System.exit(0);
 		}
+		return null;
 		
 	}
 	public static void suljeYhteys(Connection con) {
@@ -153,9 +201,8 @@ public class ht2019{
 	}
 	public static void main(String args[]) {
 		Connection con = avaaYhteys();
-		
 		//lisaaTyokohde(con);
-		lisaaTuntityosuorite(con);
+		//lisaaTuntityosuorite(con);
 		
 		
 		suljeYhteys(con);
