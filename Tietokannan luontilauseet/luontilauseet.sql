@@ -44,18 +44,18 @@ tarvikeid INT NOT NULL,					--Tarvikkeen tunnus
 nimi VARCHAR(50) NOT NULL,				--Tarvikkeen nimi
 sohinta NUMERIC(10, 2) NOT NULL,			--Tarvikkeen sisäänostohinta
 yksikkö VARCHAR(50) NOT NULL,			--Tarvikkeiden määrän yksikkö. Kpl/metri jne...
-varastotilanne INT NOT NULL,			--Tarvikkeen varastotilanne. Tavaraa varastossa varastotilanne*yksikkö määrä
+varastotilanne INT NOT NULL CHECK(varastotilanne >=0),			--Tarvikkeen varastotilanne. Tavaraa varastossa varastotilanne*yksikkö määrä
 PRIMARY KEY(tarvikeid));
 
 INSERT INTO tarvike VALUES
-(123, 'ABB Jussi uppokytkin', 19.90, 'kpl', 20),
-(345, 'ABB Jussi uppopistorasia', 12.90, 'kpl', 20),
-(567, 'ABB nysä M16 20kpl', 7.99, 'kpl', 10),
-(789, 'MCMK maakaapeli', 1.5, 'metri', 200),
-(999, 'MMJ 3x1,5 asennuskaapeli', 0.77, 'metri', 100)
-(100, 'Yleissulake 10A 500V', 0.40, 'kpl', 50),
-(101, 'ABB Jussi pinta 6 -kytkin', 8.99, 'kpl', 20),
-(102, 'Airam Naulakiinnike TC 10-14', 0.08, 'kpl', 1000);
+(100, 'ABB Jussi uppokytkin', 19.90, 'kpl', 20),
+(101, 'ABB Jussi uppopistorasia', 12.90, 'kpl', 20),
+(102, 'ABB nysä M16 20kpl', 7.99, 'kpl', 10),
+(103, 'MCMK maakaapeli', 1.5, 'metri', 200),
+(104, 'MMJ 3x1,5 asennuskaapeli', 0.77, 'metri', 100),
+(105, 'Yleissulake 10A 500V', 0.40, 'kpl', 50),
+(106, 'ABB Jussi pinta 6 -kytkin', 8.99, 'kpl', 20),
+(107, 'Airam Naulakiinnike TC 10-14', 0.08, 'kpl', 1000);
 
 
 CREATE TABLE suoritetarvike(			
