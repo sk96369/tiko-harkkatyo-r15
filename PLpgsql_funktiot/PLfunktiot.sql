@@ -26,3 +26,14 @@ BEGIN
 	END IF;
 END
 $$ LANGUAGE plpgsql;
+
+--Funktio 3
+CREATE OR REPLACE FUNCTION maxValue(tbl text, col text, out res integer)
+as $$
+begin
+	execute format('select max(%s) from %s', col, tbl)
+	into res;
+end
+$$ LANGUAGE plpgsql;
+--Funktio 4
+
