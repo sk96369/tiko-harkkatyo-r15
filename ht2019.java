@@ -1,6 +1,7 @@
 import java.sql.*;
 import java.util.*;
 import java.util.HashMap;
+import java.util.Date;
 
 public class ht2019{
 	
@@ -35,12 +36,11 @@ public class ht2019{
 	//Metodi uuden asiakkaan lisäämiseksi tietokantaan.
 	public void lisaaUusiAsiakas(Connection con){
 		//Kysellään asiakkaan tiedot
-		Scanner sc=new Scanner(System.in);
 		Integer atunnus=uusiID(con, "asiakas", "asiakasid");
 		System.out.print("Asiakkaan nimi:");
-		String animi=sc.nextLine();
+		String animi=inputManager.readString();
 		System.out.print("Asiakkaan osoite:");
-		String aosoite=sc.nextLine();
+		String aosoite=inputManager.readString();
 		
 		if(atunnus!=null) {
 			try {
@@ -60,24 +60,22 @@ public class ht2019{
 		}
 		else
 			System.out.println("Virheelliset tiedot.");
-		sc.close();
 		
 	}
 	//Metodi työkohteen lisäämiseksi asiakkaalle
 	public static void lisaaTyokohde(Connection con){
-		Scanner sc=new Scanner(System.in);
 		//Tulostetaan kannassa olevien asiakkaiden tiedot
 		tulostaKysely(con, "SELECT*FROM asiakas");
 		//Kysellään työkohteeseen liittyvät tiedot
 		System.out.print("Työkohteen omistajan tunnus:");
-		Integer atunnus=typeCaster.toInt(sc.nextLine());		
+		Integer atunnus=inputManager.readInt();		
 		Integer tktunnus=uusiID(con, "työkohde", "kohdeid");
 		System.out.print("Työkohteen nimi:");
-		String tknimi=sc.nextLine();
+		String tknimi=inputManager.readString();
 		System.out.print("Työkohteen osoite:");
-		String tkosoite=sc.nextLine();
+		String tkosoite=inputManager.readString();
 		System.out.print("Kotitalousvähennys? true/false:");
-		Boolean kvk=typeCaster.toBoolean(sc.nextLine());
+		Boolean kvk=inputManager.readBoolean();
 		
 		if(atunnus!=null && tktunnus!=null && kvk!=null) {
 			try {
@@ -100,32 +98,28 @@ public class ht2019{
 		}
 		else
 			System.out.println("Virheelliset tiedot.");
-		sc.close();
 		
 	}
 	public static Integer valitseTyokohde(Connection con) {
-		Scanner sc=new Scanner(System.in);
 		String kysely="SELECT a.nimi as asiakas, t.kohdeid, t.nimi as kohde, t.osoite "+
 				"FROM asiakas as a, työkohde as t "+
 				"where a.asiakasid=t.asiakasid";
 		System.out.println("Työkohteiden tiedot:");
 		tulostaKysely(con, kysely);
 		System.out.print("Työkohteen tunnus:");
-		Integer tkid=typeCaster.toInt(sc.nextLine());
-		sc.close();
+		Integer tkid=inputManager.readInt();
 		return tkid;
 		
 		
 	}
 	//Metodi tuntiyöiden lisäämiseksi työkohteelle.
 	public static void lisaaTuntityosuorite(Connection con) {
-		Scanner sc=new Scanner(System.in);
 		Integer tkID=valitseTyokohde(con);				
 		
 		System.out.print("Työn tyyppi (Suunnittelu/Työ/Aputyö):");
-		String ttyyppi=sc.nextLine();								//ttyyppi=tuntityön tyyppi
+		String ttyyppi=inputManager.readString();							//ttyyppi=tuntityön tyyppi
 		System.out.print("Työn määrä (tunteina):");
-		Integer tunnit=typeCaster.toInt(sc.nextLine());				//Työtuntien määrä
+		Integer tunnit=inputManager.readInt();				//Työtuntien määrä
 		if(tkID!=null && tunnit!=null) {
 			try {
 				int suoriteID;
@@ -176,18 +170,16 @@ public class ht2019{
 		}
 		else
 			System.out.println("Virheelliset tiedot.");
-		sc.close();
 	}
 
 	public static void lisaaTarvikeSuoritteeseen(Connection con, int suoriteid) {
-		Scanner sc=new Scanner(System.in);	
 		String kysely="SELECT tarvikeid, nimi, varastotilanne FROM tarvike WHERE varastotilanne>0";
 		System.out.println("Tarvikkeet varastossa:");
 		tulostaKysely(con, kysely);
 		System.out.print("Tarvikkeen tunnus: ");
-		Integer tarvikeid=typeCaster.toInt(sc.nextLine());
+		Integer tarvikeid=inputManager.readInt();
 		System.out.print("Määrä: ");
-		Integer maara=typeCaster.toInt(sc.nextLine());
+		Integer maara=inputManager.readInt();
 		
 		if(tarvikeid!=null && maara!=null && maara>0) {
 			try {
@@ -211,7 +203,6 @@ public class ht2019{
 		}
 		else
 			System.out.println("Virheelliset tiedot.");
-		sc.close();
 		
 		
 	}
@@ -245,6 +236,39 @@ public class ht2019{
 			System.exit(0);
 		}
 		return null;
+		
+	}
+	/******************** T3 *********************************************************/
+	public static void luoLasku(Connection con, Integer edeltajaid, Integer suoriteid, Integer monesko) {
+		//Lasku l�hetet��n, kun se ollaan luotu
+		Date lahetyspvm = new Date();
+		System.out.println("Anna er�p�iv� (yyyy-dd-mm):");
+		Date erapvm=inputManager.readDate();
+		Integer laskuid=uusiID(con, "lasku", "laskuid");
+		java.sql.Date lahetyspvmsql=typeCaster.toSqlDate(lahetyspvm);
+		java.sql.Date erapvmsql=typeCaster.toSqlDate(erapvm);
+		if(erapvm.getTime()>lahetyspvm.getTime() && lahetyspvmsql!=null && erapvmsql!=null) {
+			try {
+				CallableStatement cst=con.prepareCall("insert into lasku values(?,?,?,?,?,?,?)");
+				cst.setInt(1, laskuid);
+				cst.setInt(2, suoriteid);
+				cst.setDate(3, lahetyspvmsql);
+				cst.setDate(4, erapvmsql);
+				cst.setBoolean(5, false);
+				cst.setInt(6, monesko);
+				if(edeltajaid!=null)cst.setInt(7, edeltajaid);
+				else cst.setNull(7, java.sql.Types.INTEGER);
+				cst.execute();
+				
+				cst.close();
+				System.out.println("Lasku lis�tty");
+			}
+			catch(SQLException exc) {
+				System.out.println("tapahtui virhe: "+exc.getMessage());
+			}
+		}
+		else
+			System.out.println("Virheelliset tiedot.");
 		
 	}
 	public static void suljeYhteys(Connection con) {

@@ -121,7 +121,9 @@ lähetyspvm DATE NOT NULL,
 eräpvm DATE NOT NULL,
 maksettu BOOLEAN NOT NULL,				--Onko lasku maksettu. True=on, False=ei ole
 moneskolasku INT NOT NULL,				--Monesko lasku on kyseessä
-edeltävälasku INT NOT NULL,				--Viittaus mahdolliseen edeltäjälaskuun
+edeltävälasku INT,				--Viittaus mahdolliseen edeltäjälaskuun
 PRIMARY KEY(laskuid),
+UNIQUE(suoriteid, moneskolasku),--Yksilöidään suoriteid,moneskolasku-yhdiste. 
 FOREIGN KEY(suoriteid) REFERENCES suorite,
-FOREIGN KEY(edeltävälasku) REFERENCES lasku);
+FOREIGN KEY(edeltävälasku) REFERENCES lasku,
+CHECK(eräpvm > lähetyspvm));
