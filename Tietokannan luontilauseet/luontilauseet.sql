@@ -45,7 +45,7 @@ nimi VARCHAR(50) NOT NULL,				--Tarvikkeen nimi
 sohinta NUMERIC(10, 2) NOT NULL,			--Tarvikkeen sisäänostohinta
 yksikkö VARCHAR(50) NOT NULL,			--Tarvikkeiden määrän yksikkö. Kpl/metri jne...
 varastotilanne INT NOT NULL CHECK(varastotilanne >=0),			--Tarvikkeen varastotilanne. Tavaraa varastossa varastotilanne*yksikkö määrä
-myyntihinta NUMERIC(10, 2) NOT NULL, --Tarvikkeen myyntihinta (ei sisällä alv)
+myyntihinta NUMERIC(10, 2) NOT NULL, --Tarvikkeen myyntihinta (sis. alv)
 alv INT NOT NULL, --Tarvikkeen arvonlisäveroprosentti
 PRIMARY KEY(tarvikeid));
 
@@ -57,10 +57,8 @@ INSERT INTO tarvike VALUES
 (104, 'MMJ 3x1,5 asennuskaapeli', 0.77, 'metri', 100, 0.99, 24),
 (105, 'Yleissulake 10A 500V', 0.40, 'kpl', 50, 0.50, 24),
 (106, 'ABB Jussi pinta 6 -kytkin', 8.99, 'kpl', 20, 11.99, 24),
-(107, 'Airam Naulakiinnike TC 10-14', 0.08, 'kpl', 1000, 0.10, 24)
-(108, 'Sähköasennusten perusteet' 19.99, 'kpl', 10, 24.99, 10); --kirja
-
-
+(107, 'Airam Naulakiinnike TC 10-14', 0.08, 'kpl', 1000, 0.10, 24),
+(108, 'Sähköasennusten perusteet', 19.99, 'kpl', 10, 24.99, 10); --kirja
 
 CREATE TABLE suoritetarvike(			
 tarvikeid INT NOT NULL,					--Tarvikkeen tunnus
@@ -70,6 +68,7 @@ PRIMARY KEY(tarvikeid, suoriteid),
 FOREIGN KEY(tarvikeid) REFERENCES tarvike,
 FOREIGN KEY(suoriteid) REFERENCES suorite);
 
+INSERT INTO suoritetarvike VALUES (106, 200, 6);
 
 CREATE TABLE tuntityöt(
 tyyppi CHAR(50) NOT NULL,				--Tuntityö tyyppi, suunnittelu/työ/aputyö
