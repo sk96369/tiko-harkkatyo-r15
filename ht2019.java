@@ -1,5 +1,6 @@
 import java.sql.*;
 import java.util.*;
+import java.util.HashMap;
 
 public class ht2019{
 	
@@ -7,8 +8,8 @@ public class ht2019{
 	private static final String PALVELIN = "dbstud2.sis.uta.fi";
 	private static final int PORTTI = 5432;
 	private static final String TIETOKANTA = "tiko2019r15"; 
-	private static final String KAYTTAJA = "tp427552";
-	private static final String SALASANA = "tuomas";
+	private static final String KAYTTAJA = "";
+	private static final String SALASANA = "";
 	
 
 	//Metodi satunnaisen kyselyn tulostamiseen
@@ -257,6 +258,135 @@ public class ht2019{
 			}
 		}
 	}
+	
+	//MUODOSTETAAN TUNTITYÖLASKU
+	public static void muodostaTuntityolasku(Connection con, int kohdeid) {
+
+	try {
+		int asiakasid = -1;
+		String asiakasNimi = "";
+		String laskutusosoite = "";
+		String kohdeOsoite = "";
+		boolean kvkelpoinen = false;
+		int suoriteid = -1;
+		HashMap<String, Integer> tyonMaarat = new HashMap<>();
+		HashMap<String, Double> tyonHinnat = new HashMap<>();
+		ArrayList<String> tarvikkeet = new ArrayList<String>();
+		String tuntityot[];
+		double kvkelpoinenSumma = 0; //työnosuus
+		final int tyonAlv = 24;
+		double tarvikkeidenSumma = 0;
+
+		//Hakee tiedot työkohte -taulusta kohdeid:n perusteella.
+		PreparedStatement tyokohdePst = con.prepareStatement("SELECT asiakasid, osoite, kvkelpoinen FROM työkohde WHERE kohdeid = ?");
+		tyokohdePst.setInt(1, kohdeid);
+		ResultSet tyokohdeRs = tyokohdePst.executeQuery();
+		while (tyokohdeRs.next()) {
+			asiakasid = tyokohdeRs.getInt("asiakasid");
+			kohdeOsoite = tyokohdeRs.getString("osoite");
+			kvkelpoinen = tyokohdeRs.getBoolean("kvkelpoinen");
+		}
+
+		//Hakee tiedot asiakas -taulusta asiakasid:n perusteella
+		PreparedStatement asiakasPst = con.prepareStatement("SELECT nimi, laskutusosoite FROM asiakas WHERE asiakasid = ?");
+		asiakasPst.setInt(1, asiakasid);
+		ResultSet asiakasRs = asiakasPst.executeQuery();
+		while (asiakasRs.next()){
+			asiakasNimi = asiakasRs.getString("nimi");
+			laskutusosoite = asiakasRs.getString("laskutusosoite");
+		}
+
+		//Hakee suoriteid:n suorite -taulusta kohdeid:n perusteella. 
+		PreparedStatement suoritePst = con.prepareStatement("SELECT suoriteid FROM suorite WHERE kohdeid = ? AND suoritetyyppi = true");
+		suoritePst.setInt(1, kohdeid);
+		ResultSet suoriteRs = suoritePst.executeQuery();
+		while (suoriteRs.next()) {
+			suoriteid = suoriteRs.getInt("suoriteid");
+		}
+
+		//Hakee työsuoritteeseen käytetyt tunnit
+		PreparedStatement suoritetuntityotPst = con.prepareStatement("SELECT tyyppi, määrä FROM suoritetuntityöt WHERE suoriteid = ?");
+		suoritetuntityotPst.setInt(1, suoriteid);
+		ResultSet suoritetuntityotRs = suoritetuntityotPst.executeQuery();
+		while (suoritetuntityotRs.next()) {
+			String tyonTyyppi = suoritetuntityotRs.getString("tyyppi");
+			int tyonMaara = suoritetuntityotRs.getInt("määrä");
+			tyonMaarat.put(tyonTyyppi, tyonMaara);
+		}
+		
+		//Hakee erilaisten töiden yksikköhinnat
+		PreparedStatement tuntityotPst = con.prepareStatement("SELECT tyyppi, hinta FROM tuntityöt");
+		ResultSet tuntityotRs = tuntityotPst.executeQuery();
+		while (tuntityotRs.next()) {
+			String tyonTyyppi = tuntityotRs.getString("tyyppi");
+			double tyonHinta = tuntityotRs.getDouble("hinta");
+			tyonHinnat.put(tyonTyyppi, tyonHinta);
+		}
+
+		//Lasketaan tuntitöiden hinnat
+		tuntityot = new String[tyonMaarat.size()];
+		int tt = 0;
+		double summa;
+		//| tyyppi | määrä h | yksikköhinta € | alv % | alv-osuus € | yhteensä € |
+		for (String i : tyonMaarat.keySet()){
+			summa = tyonMaarat.get(i) * tyonHinnat.get(i);
+			tuntityot[tt] = ((i.replaceAll("\\s","")) +" | "+ Integer.toString(tyonMaarat.get(i)) +" | "+ Double.toString(tyonHinnat.get(i)) +" | "+ Integer.toString(tyonAlv) +" | "+ Double.toString(summa * (tyonAlv / 100.0)) +" | "+ Double.toString(summa));
+			kvkelpoinenSumma += summa;
+			tt++;
+		}
+
+		//Hakee työsuoritteeseen käytetyt tarvikkeet
+		PreparedStatement tarvikePst = con.prepareStatement("SELECT suoritetarvike.määrä, tarvike.tarvikeid, tarvike.nimi, tarvike.yksikkö, tarvike.myyntihinta, tarvike.alv FROM suoritetarvike, tarvike WHERE suoritetarvike.suoriteid = ? AND suoritetarvike.tarvikeid = tarvike.tarvikeid");
+		tarvikePst.setInt(1, suoriteid);
+		ResultSet tarvikeRs = tarvikePst.executeQuery();
+		//| tuotenro | kuvaus | määrä | yksikkö | yksikköhinta € | alv % | alv-osuus € | yhteensä € |
+		while (tarvikeRs.next()) {
+			tarvikkeet.add(Integer.toString(tarvikeRs.getInt("tarvikeid")) +" | "+ tarvikeRs.getString("nimi") +" | "+ Integer.toString(tarvikeRs.getInt("määrä")) +" | "+ tarvikeRs.getString("yksikkö") +" | "+ Double.toString(tarvikeRs.getDouble("myyntihinta")) +" | "+ Integer.toString(tarvikeRs.getInt("alv")) +" | "+ Double.toString(tarvikeRs.getInt("määrä") * tarvikeRs.getDouble("myyntihinta") * ((tarvikeRs.getInt("alv")) / 100.0)) +" | "+ Double.toString(tarvikeRs.getDouble("myyntihinta") * tarvikeRs.getInt("määrä")));
+			
+			tarvikkeidenSumma += tarvikeRs.getDouble("myyntihinta") * tarvikeRs.getInt("määrä");
+		}
+		
+		//Lisää lasku -taulun päivitys.
+		//Lisää tulostukset tekstitiedostoon?
+		
+		//Tulostelua
+		System.out.println("");
+		System.out.println("VASTAANOTTAJA");
+		System.out.println(asiakasNimi);
+		System.out.println(laskutusosoite);
+		System.out.println("");
+		
+		System.out.println("TYÖKOHDE");
+		System.out.println(kohdeOsoite);
+		System.out.println("");
+		
+		System.out.println("KÄYTETYT TARVIKKEET");
+		System.out.println("tuotenro | kuvaus | määrä | yksikkö | yksikköhinta € | alv % | alv-osuus € | yhteensä €");
+		for (String s : tarvikkeet) {
+			System.out.println(s);
+		}
+		System.out.println("Tarvikkeet yhteensä: " + Double.toString(tarvikkeidenSumma));
+		System.out.println("");
+		System.out.println("KÄYTETYT TYÖTUNNIT");
+		System.out.println("tyyppi | määrä h | yksikköhinta € | alv % | alv-osuus € | yhteensä €");
+		for (String a : tuntityot) {
+			System.out.println(a);
+		}
+		if(kvkelpoinen){
+			System.out.println("Kotitalousvähennykseen kelpaava osuus: " + Double.toString(kvkelpoinenSumma));
+		} else {
+			System.out.println("Työ yhteensä: " + Double.toString(kvkelpoinenSumma));
+		}
+		System.out.println("");
+		System.out.println("Maksettavaa yhteensä: " + Double.toString(tarvikkeidenSumma + kvkelpoinenSumma));
+		System.out.println("");
+		
+	} catch (SQLException e) {
+		System.out.println("tapahtui virhe: " + e.getMessage());
+	} catch (Exception ee) {
+		System.out.println("tapahtui virhe: " + ee.getMessage());
+	}
+	}
 	public static void main(String args[]) {
 		Connection con = avaaYhteys();
 		//Connection con2=avaaYhteys();
@@ -265,6 +395,8 @@ public class ht2019{
 		//int h=uusiID(con, "urakkasopimus", "urakkaid");
 		//System.out.println(h);
 		//lisaaTarvikeSuoritteeseen(con, 200);
+
+		//muodostaTuntityolasku(con, 100);
 		
 		suljeYhteys(con);
 	}

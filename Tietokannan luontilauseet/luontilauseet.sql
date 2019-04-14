@@ -45,7 +45,7 @@ nimi VARCHAR(50) NOT NULL,				--Tarvikkeen nimi
 sohinta NUMERIC(10, 2) NOT NULL,			--Tarvikkeen sisäänostohinta
 yksikkö VARCHAR(50) NOT NULL,			--Tarvikkeiden määrän yksikkö. Kpl/metri jne...
 varastotilanne INT NOT NULL CHECK(varastotilanne >=0),			--Tarvikkeen varastotilanne. Tavaraa varastossa varastotilanne*yksikkö määrä
-myyntihinta NUMERIC(10, 2) NOT NULL, --Tarvikkeen myyntihinta (ei sisällä alv)
+myyntihinta NUMERIC(10, 2) NOT NULL, --Tarvikkeen myyntihinta (sis. alv)
 alv INT NOT NULL, --Tarvikkeen arvonlisäveroprosentti
 PRIMARY KEY(tarvikeid));
 
