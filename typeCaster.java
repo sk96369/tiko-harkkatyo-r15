@@ -1,4 +1,6 @@
-
+import java.util.Date;
+import java.text.*;
+import java.sql.*;
 public final class typeCaster{
 	
 	public static Integer toInt(String s) {
@@ -19,4 +21,25 @@ public final class typeCaster{
 			return null;
 		}
 	}
+	//Muutos String-tyypistä Date-tyypiksi
+	public static Date toDate(String s) {
+		try {
+			Date date=new SimpleDateFormat("yyyy-dd-MM").parse(s);
+			return date;
+		}
+		catch(Exception e) {
+			return null;
+		}
+	}
+	//Muutos Date-tyypistä java.sql.Date-tyypiksi
+	public static java.sql.Date toSqlDate(Date d){
+		try {
+			java.sql.Date date=new java.sql.Date(d.getTime());
+			return date;
+		}
+		catch(Exception e) {
+			return null;
+		}
+	}
+	
 }
