@@ -1,3 +1,5 @@
+//Tietokantaohjelmointi 2019 - harjoitustyö - ryhmä 15
+
 import java.sql.*;
 import java.util.*;
 import java.util.HashMap;
@@ -322,6 +324,8 @@ public class ht2019{
                 kohdeOsoite = tyokohdeRs.getString("osoite");
                 kvkelpoinen = tyokohdeRs.getBoolean("kvkelpoinen");
             }
+            tyokohdePst.close();
+            tyokohdeRs.close();
 
             //Hakee tiedot asiakas -taulusta asiakasid:n perusteella
             PreparedStatement asiakasPst = con.prepareStatement("SELECT nimi, laskutusosoite FROM asiakas WHERE asiakasid = ?");
@@ -331,6 +335,8 @@ public class ht2019{
                 asiakasNimi = asiakasRs.getString("nimi");
                 laskutusosoite = asiakasRs.getString("laskutusosoite");
             }
+            asiakasPst.close();
+            asiakasRs.close();
 
             //Hakee suoriteid:n suorite -taulusta kohdeid:n perusteella. 
             PreparedStatement suoritePst = con.prepareStatement("SELECT suoriteid FROM suorite WHERE kohdeid = ? AND suoritetyyppi = true");
@@ -339,6 +345,8 @@ public class ht2019{
             while (suoriteRs.next()) {
                 suoriteid = suoriteRs.getInt("suoriteid");
             }
+            suoritePst.close();
+            suoriteRs.close();
 
             //Hakee työsuoritteeseen käytetyt tunnit
             PreparedStatement suoritetuntityotPst = con.prepareStatement("SELECT tyyppi, määrä FROM suoritetuntityöt WHERE suoriteid = ?");
@@ -349,6 +357,8 @@ public class ht2019{
                 int tyonMaara = suoritetuntityotRs.getInt("määrä");
                 tyonMaarat.put(tyonTyyppi, tyonMaara);
             }
+            suoritetuntityotPst.close();
+            suoritetuntityotRs.close();
 
             //Hakee erilaisten töiden yksikköhinnat
             PreparedStatement tuntityotPst = con.prepareStatement("SELECT tyyppi, hinta FROM tuntityöt");
@@ -358,6 +368,8 @@ public class ht2019{
                 double tyonHinta = tuntityotRs.getDouble("hinta");
                 tyonHinnat.put(tyonTyyppi, tyonHinta);
             }
+            tuntityotPst.close();
+            tuntityotRs.close();
 
             //Lasketaan tuntitöiden hinnat
             tuntityot = new String[tyonMaarat.size()];
@@ -381,6 +393,8 @@ public class ht2019{
 
                 tarvikkeidenSumma += tarvikeRs.getDouble("myyntihinta") * tarvikeRs.getInt("määrä");
             }
+            tarvikePst.close();
+            tarvikeRs.close();
 
             //Lasku -taulun päivitys.
             try{
@@ -397,7 +411,9 @@ public class ht2019{
             while(erapvmRs.next()){
 				erapvm = erapvmRs.getString("eräpvm");
 				laskuid = erapvmRs.getInt("laskuid");
-			}			
+			}
+			erapvmPst.close();
+			erapvmRs.close();	
 
             //Luodaan lasku txt tiedostoon
             try {
@@ -435,7 +451,7 @@ public class ht2019{
                 writer.write("\n\nEräpäivä: "+erapvm);
                 writer.write("\n\nTilinumero: " + tilinumero);
                 writer.close();
-                System.out.println("Lasku luotiin onnistuneesti.");
+                System.out.println("Lasku"+Integer.toString(laskuid)+".txt luotiin onnistuneesti.");
             } catch (IOException e) {
                 System.out.println("Tapahtui virhe: " + e);
             }
@@ -445,6 +461,92 @@ public class ht2019{
             System.out.println("Tapahtui virhe: " + ee.getMessage());
         }
     }
+    
+    /**
+     * (Raportti 1 - vaaddittava toiminnallisuus)
+     * Muodostaa hinta-arvion kohteesta x siihen aiemmin lisättyjen tarvikkeiden ja tuntitöiden pohjalta.
+     * 
+     * @param con yhteys tietokantaan.
+     * @param kohdeid sen työkohteen id tunnus, josta halutaan muodostaa hinta-arvio.
+     */
+    public static void muodostaHintaArvio (Connection con, int kohdeid){
+		try{
+			int suoriteid = -1;
+			double tarvikeSumma = 0.00;
+			double tuntiSumma = 0.00;
+			String kohdeOsoite = "";
+			HashMap<String, Integer> tyonMaarat = new HashMap<>();
+			HashMap<String, Double> tyonHinnat = new HashMap<>();
+			
+			//Hakee suoriteid:n suorite -taulusta kohdeid:n perusteella. 
+			PreparedStatement suoritePst = con.prepareStatement("SELECT suoriteid FROM suorite WHERE kohdeid = ? AND suoritetyyppi = true");
+			suoritePst.setInt(1, kohdeid);
+			ResultSet suoriteRs = suoritePst.executeQuery();
+			while (suoriteRs.next()) {
+				suoriteid = suoriteRs.getInt("suoriteid");
+			}
+			suoritePst.close();
+			suoriteRs.close();
+			
+			//Hakee työsuoritteeseen käytetyt tarvikkeet
+			PreparedStatement tarvikePst = con.prepareStatement("SELECT suoritetarvike.määrä,  tarvike.myyntihinta FROM suoritetarvike, tarvike WHERE suoritetarvike.suoriteid = ? AND suoritetarvike.tarvikeid = tarvike.tarvikeid");
+			tarvikePst.setInt(1, suoriteid);
+			ResultSet tarvikeRs = tarvikePst.executeQuery();
+			while (tarvikeRs.next()){
+				tarvikeSumma += Math.round((tarvikeRs.getInt("määrä") * tarvikeRs.getDouble("myyntihinta"))*100.0)/100.0;
+			}
+			tarvikePst.close();
+			tarvikeRs.close();
+			
+			//Hakee työsuoritteeseen käytetyt tunnit
+			PreparedStatement suoritetuntityotPst = con.prepareStatement("SELECT tyyppi, määrä FROM suoritetuntityöt WHERE suoriteid = ?");
+			suoritetuntityotPst.setInt(1, suoriteid);
+			ResultSet suoritetuntityotRs = suoritetuntityotPst.executeQuery();
+			while (suoritetuntityotRs.next()) {
+				String tyonTyyppi = suoritetuntityotRs.getString("tyyppi");
+				int tyonMaara = suoritetuntityotRs.getInt("määrä");
+				tyonMaarat.put(tyonTyyppi, tyonMaara);
+			}
+			suoritetuntityotPst.close();
+			suoritetuntityotRs.close();
+
+			//Hakee erilaisten töiden yksikköhinnat
+			PreparedStatement tuntityotPst = con.prepareStatement("SELECT tyyppi, hinta FROM tuntityöt");
+			ResultSet tuntityotRs = tuntityotPst.executeQuery();
+			while (tuntityotRs.next()) {
+				String tyonTyyppi = tuntityotRs.getString("tyyppi");
+				double tyonHinta = tuntityotRs.getDouble("hinta");
+				tyonHinnat.put(tyonTyyppi, tyonHinta);
+			}
+			tuntityotPst.close();
+			tuntityotRs.close();
+			
+			//Lasketaan työstä koituvat kulut
+			for (String i : tyonMaarat.keySet()) {
+				tuntiSumma += Math.round((tyonMaarat.get(i) * tyonHinnat.get(i))*100.0)/100.0;
+			}
+			
+			//Hakee tiedot työkohte -taulusta kohdeid:n perusteella.
+			PreparedStatement tyokohdePst = con.prepareStatement("SELECT osoite FROM työkohde WHERE kohdeid = ?");
+			tyokohdePst.setInt(1, kohdeid);
+			ResultSet tyokohdeRs = tyokohdePst.executeQuery();
+			while (tyokohdeRs.next()) {
+				kohdeOsoite = tyokohdeRs.getString("osoite");
+			}
+			tyokohdePst.close();
+			tyokohdeRs.close();
+			
+			//Tulostetaan hinta-arvio
+			System.out.println("Hinta-arvio kohteeseen: " + kohdeOsoite);
+			System.out.println("Kulut tarvikkeista: " + Double.toString(tarvikeSumma) + "€");
+			System.out.println("Kulut työtunneista: " + Double.toString(tuntiSumma) + "€");
+			System.out.println("Yhteensä: " + Double.toString(tuntiSumma + tarvikeSumma) + "€");
+		}catch (SQLException e){
+			System.out.println("Tapahtui virhe: " + e);
+		}catch (Exception e){
+			System.out.println("Tapahtui virhe: " + e);
+		}
+	}
 
 	public static void main(String args[]) {
 		Connection con = avaaYhteys();
@@ -457,6 +559,8 @@ public class ht2019{
 		
 		//muodostaTuntityolasku(con, 100, null, 1);
 		//muodostaTuntityolasku(con, 100, 1, 2);
+		
+		//muodostaHintaArvio(con, 100);
 		
 		suljeYhteys(con);
 	}
