@@ -117,6 +117,23 @@ public class ht2019{
 		
 		
 	}
+	public static Integer luoUusiSuorite(Connection con, Integer tyokohdeID, boolean tyyppi) {
+		try {
+			Integer suoriteID=uusiID(con, "suorite", "suoriteid");
+			
+			PreparedStatement pst=con.prepareStatement("INSERT INTO suorite VALUES(?,?,?)");
+			pst.setInt(1, suoriteID);
+			pst.setInt(2, tyokohdeID);
+			pst.setBoolean(3, tyyppi);
+			pst.executeUpdate();
+			
+			return suoriteID;
+		}
+		catch(SQLException exc) {
+			System.out.println("tapahtui virhe: "+exc.getMessage());
+			return null;
+		}
+	}
 	//Metodi tuntiyöiden lisäämiseksi työkohteelle.
 	public static void lisaaTuntityosuorite(Connection con) {
 		Integer tkID=valitseTyokohde(con);				
@@ -274,6 +291,120 @@ public class ht2019{
 		}
 		else
 			System.out.println("Virheelliset tiedot.");
+		
+	}
+	public static void lisaaUrakkasopimusTietokantaan(Connection con) {
+
+		try {
+			float kokonaissumma=0;
+			HashMap<String, Integer> tyomaarat=new HashMap<String, Integer>();
+			PreparedStatement pst=con.prepareStatement("SELECT tyyppi, hinta FROM tuntityöt");
+			ResultSet rs=pst.executeQuery();
+			System.out.println("Valitse urakkaan kuuluvat työt");
+			while(rs.next()) {
+				String tyotyyppi=rs.getString(1);
+				float tuntihinta=rs.getFloat(2);
+				System.out.println(tyotyyppi);
+				System.out.println("Tuntien määrä: ");
+				Integer tunnit=inputManager.readInt();
+				if(tunnit>0) {
+					tyomaarat.put(tyotyyppi, tunnit);
+					kokonaissumma+=tunnit*tuntihinta;
+				}
+			}
+
+			HashMap<Integer, Integer> tarvikkeet=new HashMap<Integer, Integer>();
+			HashMap<Integer, Integer> varastotilanne=new HashMap<Integer, Integer>();
+			HashMap<Integer, Float> hinnat=new HashMap<Integer, Float>();
+			pst=con.prepareStatement("SELECT tarvikeid, varastotilanne, myyntihinta FROM tarvike WHERE varastotilanne>0");
+			rs=pst.executeQuery();
+			while(rs.next()) {
+				Integer tarvikeid=rs.getInt(1);
+				Integer vtilanne=rs.getInt(2);
+				Float myyntihinta=rs.getFloat(3);
+				tarvikkeet.put(tarvikeid, 0);
+				varastotilanne.put(tarvikeid, vtilanne);
+				hinnat.put(tarvikeid, myyntihinta);
+			}
+			
+			System.out.println("Valitse urakkaan kuuluvat tarvikkeet");
+			tulostaKysely(con, "select tarvikeid, nimi, varastotilanne from tarvike");
+			boolean exit=false;
+			System.out.println("Lopeta syöttämällä -1");
+			do {
+				System.out.println("Tarvikkeen tunnus: ");
+				Integer tunnus=inputManager.readInt();
+				exit=(tunnus==-1)?true : false;
+				if(!exit && tarvikkeet.containsKey(tunnus)) {
+					System.out.println("Tarvikkeiden lukumärä: ");
+					Integer maara=inputManager.readInt();
+					if((varastotilanne.get(tunnus)-maara)>=0) {
+						tarvikkeet.replace(tunnus, tarvikkeet.get(tunnus)+maara);
+						varastotilanne.replace(tunnus, varastotilanne.get(tunnus)-maara);
+						kokonaissumma+=maara*hinnat.get(tunnus);
+					}
+					else System.out.println("Varastomääräiian pieni.");
+				}
+				else System.out.println("Virheellinen tuotetunnus.");
+			}while(!exit);
+			
+			System.out.println("Urakan kokonaishinta: "+kokonaissumma+"e");
+			System.out.println("Laskuerien lukumäärä: ");
+			Integer laskueraLkm;
+			do {
+				exit=true;
+				laskueraLkm=inputManager.readInt();
+				if((kokonaissumma/laskueraLkm)<20) {
+					System.out.print("Laskuerän suuruus liian pieni, "+(kokonaissumma/laskueraLkm)+"e. Minimi 20e");
+					exit=false;
+				}
+			}while(!exit);
+			
+			//Luodaan uusi suorite urakalle
+			Integer tyokohdeID=valitseTyokohde(con);
+			Integer suoriteID=luoUusiSuorite(con, tyokohdeID, false);
+			if(suoriteID!=null) {
+
+				//Luodaan uusi urakkasopimus
+				Integer urakkaID=uusiID(con, "urakkasopimus", "urakkaid");
+				CallableStatement cst=con.prepareCall("INSERT INTO urakkasopimus VALUES(?,?,?,?,?)");
+				cst.setInt(1, urakkaID);cst.setInt(2, suoriteID);cst.setFloat(3, kokonaissumma/laskueraLkm);
+				cst.setInt(4, laskueraLkm);cst.setInt(5, laskueraLkm);
+				cst.execute();
+				//Lisätään urakkaan liittyvät työt
+				for(String key : tyomaarat.keySet()) {
+					int tunnit=tyomaarat.get(key);
+					if(tunnit>0) {
+						cst=con.prepareCall("INSERT INTO urakkatyöt VALUES(?,?,?)");
+						cst.setInt(1, urakkaID);cst.setString(2, key);cst.setInt(3, tunnit);
+						cst.execute();
+					}
+				}
+				//Lisätään urakkaan liittyvät tarvikkeet ja päivitetään varastotilanne
+				for(Integer tarvikeid : tarvikkeet.keySet()) {
+					int maara=tarvikkeet.get(tarvikeid);
+					int uusiVarastotilanne=varastotilanne.get(tarvikeid);
+					if(maara>0) {
+						cst=con.prepareCall("INSERT INTO suoritetarvike VALUES(?,?,?)");
+						cst.setInt(1, tarvikeid);cst.setInt(2, suoriteID);cst.setInt(3, maara);
+						cst.execute();
+					
+						cst=con.prepareCall("UPDATE tarvike SET varastotilanne=? WHERE tarvikeid=?");
+						cst.setInt(1,uusiVarastotilanne);cst.setInt(2,tarvikeid);
+						cst.execute();
+					}
+				}
+				System.out.print("Uusi urakkasopimus lisätty kantaan");
+				rs.close();
+				pst.close();
+				cst.close();
+			}
+			
+			
+		}
+		catch(SQLException exc) {
+			System.out.println("tapahtui virhe: "+exc.getMessage());
+		}
 		
 	}
 	public static void suljeYhteys(Connection con) {
@@ -561,7 +692,6 @@ public class ht2019{
 		//muodostaTuntityolasku(con, 100, 1, 2);
 		
 		//muodostaHintaArvio(con, 100);
-		
 		suljeYhteys(con);
 	}
 	
