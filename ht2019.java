@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.HashMap;
 import java.util.Date;
 import java.io.*;
+import java.util.stream.*;
 
 
 public class ht2019{
@@ -13,26 +14,51 @@ public class ht2019{
 	private static final String PALVELIN = "dbstud2.sis.uta.fi";
 	private static final int PORTTI = 5432;
 	private static final String TIETOKANTA = "tiko2019r15"; 
-	private static final String KAYTTAJA = "";
-	private static final String SALASANA = "";
+	private static final String KAYTTAJA = "tp427552";
+	private static final String SALASANA = "tuomas";
 	
 	private static final String tilinumero = "FI42 5000 1510 0000 23";	
 
 	//Metodi satunnaisen kyselyn tulostamiseen
 	public static void tulostaKysely(Connection con, String kysely) {
 		try {
-			PreparedStatement pst=con.prepareStatement(kysely);
+			//Haetaan sarakkeiden maksimileveydet
+			PreparedStatement pst=con.prepareStatement(kysely, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			ResultSet rs=pst.executeQuery();
 			ResultSetMetaData meta=rs.getMetaData();
 			int colCount=meta.getColumnCount();
-			while(rs.next()){
-				for(int i=1; i<=colCount; i++) {
-					System.out.print(rs.getString(i)+"; ");
-				}
-				System.out.println();
+			int[] colWidth=new int[colCount];
+			for(int n=0; n<colCount; n++) {
+				colWidth[n]=meta.getColumnName(n+1).length();
 			}
+			while(rs.next()) {
+				for(int n=1; n<=colCount; n++) {
+					int length=rs.getString(n).length();
+					colWidth[n-1]=(length>colWidth[n-1])? length : colWidth[n-1];
+				}
+			}
+			rs.beforeFirst();
+			//Tulostetaan taulun sarakkeet
+			int totLength=0;
+			for(int n=0; n<colCount; n++) {
+				System.out.print(String.format("%"+(-colWidth[n])+"s"+" | ", meta.getColumnName(n+1)));
+				totLength+=colWidth[n]+3;
+			}
+			System.out.println();
+			Stream.generate(()->"-").limit(totLength-1).forEach(System.out::print);
+			//Tulostetaan taulun sisältö
+			while(rs.next()) {
+				System.out.println();
+				for(int n=0; n<colCount; n++) {
+					System.out.print(String.format("%"+(-colWidth[n])+"s"+" | " ,rs.getString(n+1)));
+				}
+			}
+			System.out.println();
+			Stream.generate(()->"-").limit(totLength-1).forEach(System.out::print);
+			System.out.println();
 			pst.close();
 			rs.close();
+		
 		}
 		catch(SQLException exc) {
 			System.out.println("tapahtui virhe: "+exc.getMessage());
@@ -690,7 +716,7 @@ public class ht2019{
 		
 		//muodostaTuntityolasku(con, 100, null, 1);
 		//muodostaTuntityolasku(con, 100, 1, 2);
-		
+		tulostaKysely(con, "select*from tarvike");
 		//muodostaHintaArvio(con, 100);
 		suljeYhteys(con);
 	}
