@@ -65,7 +65,7 @@ public class ht2019{
 		}
 	}
 	//Metodi uuden asiakkaan lisäämiseksi tietokantaan.
-	public void lisaaUusiAsiakas(Connection con){
+	public static void lisaaUusiAsiakas(Connection con){
 		//Kysellään asiakkaan tiedot
 		Integer atunnus=uusiID(con, "asiakas", "asiakasid");
 		System.out.print("Asiakkaan nimi:");
@@ -720,7 +720,7 @@ public class ht2019{
 		
 		//muodostaTuntityolasku(con, 100, null, 1);
 		//muodostaTuntityolasku(con, 100, 1, 2);
-		tulostaKysely(con, "select*from tarvike");
+		//tulostaKysely(con, "select*from tarvike");
 		//muodostaHintaArvio(con, 100);
 		suljeYhteys(con);
 	}

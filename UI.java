@@ -1,5 +1,8 @@
 /* Luokka syötteen lukemiseen ja tulosteen tulostamiseen*/
 
+import java.io.*;
+import java.sql.*;
+
 public class UI
 {	
 	boolean kaynnissa;
@@ -21,6 +24,7 @@ public class UI
 	{
 		while(kaynnissa)
 		{
+			System.out.print("Syötä komento:");
 			try
 			{
 				lueSyote();
@@ -28,6 +32,7 @@ public class UI
 			catch(IllegalArgumentException e)
 			{
 				System.out.println(e.getMessage());
+				System.out.println("Komennolla \"help\" saat listan ohjelman tunnistamista komennoista.");
 			}
 		}
 	}
@@ -49,7 +54,7 @@ public class UI
 	
 	/* Metodi, joka päättelee syötteen perusteella mikä
 	toiminto suoritetaan */
-	private boolean kasitteleSyote(String s) throws IllegalArgumentException
+	private void kasitteleSyote(String s) throws IllegalArgumentException
 	{
 		switch(s)
 		{
@@ -62,42 +67,42 @@ public class UI
 			case "lisää työkohde":
 				ht2019.lisaaTyokohde(con);
 				break;
-			case "lisää asiakas"
+			case "lisää asiakas":
 				ht2019.lisaaUusiAsiakas(con);
 				break;
-			case "lisää urakkasopimus"
+			case "lisää urakkasopimus":
 				ht2019.lisaaUrakkasopimusTietokantaan(con);
 				break;
-			case: "lisää tarvike"
+			case "lisää tarvike":
 				System.out.println("Syötä suoritteen tunnus: [numero 0-*]");
 				int tunnus = inputManager.readInt();
-				h2019.lisaaTarvikeSuoritteeseen(con, tunnus);
+				ht2019.lisaaTarvikeSuoritteeseen(con, tunnus);
 				break;
-			case: "lisää suorite"
-				ht.lisaaTuntityosuorite(con);
+			case "lisää suorite":
+				ht2019.lisaaTuntityosuorite(con);
 				break;
-			case: "luo lasku"
+			case "luo lasku":
 				System.out.println("Syötä tuntityölaskun kohteen tunnus: ");
-				int tunnus = inputManager.readInt();
-				ht.muodostaTuntityolasku(con, tunnus, null, 1);
+				int kohde_id = inputManager.readInt();
+				ht2019.muodostaTuntityolasku(con, kohde_id, null, 1);
 				break;
-			case: "luo muistutuslaskut"
-				// Tarkistetaan 
+			case "luo muistutuslaskut":
+				// KESKEN
+				System.out.println("Puuttuu");
 				break;
-			case: "lopeta"
+			case "lopeta":
 				System.out.println("Suljetaan ohjelma.");
 				kaynnissa = false;
 				break;
 			default:
+				// Jos komentoa ei tunnisteta, heitetään virheilmoitus
 				throw new IllegalArgumentException("Syötettyä komentoa ei tunnistettu.");
-				break;
 		}
 	}
 	
 	/* Metodi, joka tulostaa jokaisen sen tunnistaman komennon */
 	private void tulostaOhjeet()
 	{
-		System.out.println("lisää työkohde\nlisää
-		asiakas\nlisää urakkasopimus\nlisää tarvike\nlisää tuntityösuorite\nluo lasku\nluo muistutuslaskut\nkysely\nlopeta
+		System.out.println("lisää työkohde\nlisää asiakas\nlisää urakkasopimus\nlisää tarvike\nlisää tuntityösuorite\nluo lasku\nluo muistutuslaskut\nkysely\nlopeta");
 	}
 }
