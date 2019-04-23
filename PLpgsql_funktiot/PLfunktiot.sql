@@ -15,7 +15,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
---Funktio 2 
+--Funktio 2 , kts Funktio 1
 CREATE OR REPLACE FUNCTION tarvikelisäys(tid integer, sid integer, määrä_ integer)--ok
 RETURNS void AS $$
 BEGIN
@@ -27,7 +27,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
---Funktio 3
+--Funktio 3, Hakee suurimman arvon taulun tbl sarakkeesta col
 CREATE OR REPLACE FUNCTION maxValue(tbl text, col text, out res integer)--ok
 as $$
 begin
@@ -35,7 +35,7 @@ begin
 	into res;
 end
 $$ LANGUAGE plpgsql;
---Funktio 4
+--Funktio 4, kts triggeri 4. 
 CREATE OR REPLACE FUNCTION lisäätarvike()--ok
 RETURNS TRIGGER AS
 $BODY$
@@ -49,7 +49,7 @@ BEGIN
 END
 $BODY$
 LANGUAGE plpgsql;
---Funktio 5
+--Funktio 5, kts triggeri 5.
 CREATE OR REPLACE FUNCTION poistatarvike()--ok
 RETURNS TRIGGER AS
 $BODY$
@@ -62,7 +62,7 @@ BEGIN
 END
 $BODY$
 LANGUAGE plpgsql;
---Funktio 6
+--Funktio 6, kts triggero 3.
 CREATE OR REPLACE FUNCTION lisääTarvikeHistoriaan()--ok
 RETURNS TRIGGER AS
 $BODY$
@@ -75,7 +75,7 @@ BEGIN
 END
 $BODY$
 LANGUAGE plpgsql;
---Funktio 7
+--Funktio 7, kts triggeri 1.
 CREATE OR REPLACE FUNCTION lisääTarvikeHistoriaan2()--ok
 RETURNS TRIGGER AS
 $BODY$

@@ -74,17 +74,18 @@ public class UI
 				ht2019.lisaaUrakkasopimusTietokantaan(con);
 				break;
 			case "lisää tarvike":
-				System.out.println("Syötä suoritteen tunnus: [numero 0-*]");
-				int tunnus = inputManager.readInt();
-				ht2019.lisaaTarvikeSuoritteeseen(con, tunnus);
+				//System.out.println("Syötä suoritteen tunnus: [numero 0-*]");
+				//int tunnus = inputManager.readInt();
+				ht2019.lisaaTarvikeKohteeseen(con);//kts. metodi
 				break;
 			case "lisää suorite":
 				ht2019.lisaaTuntityosuorite(con);
 				break;
 			case "luo lasku":
-				System.out.println("Syötä tuntityölaskun kohteen tunnus: ");
-				int kohde_id = inputManager.readInt();
-				ht2019.muodostaTuntityolasku(con, kohde_id, null, 1);
+				//System.out.println("Syötä tuntityölaskun kohteen tunnus: ");
+				//int kohde_id = inputManager.readInt();
+				//ht2019.muodostaTuntityolasku(con, kohde_id, null, 1);
+				ht2019.muodostaTuntityolasku(con);//kts metodi
 				break;
 			case "luo muistutuslaskut":
 				// KESKEN

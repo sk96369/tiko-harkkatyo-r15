@@ -19,7 +19,11 @@ public class ht2019{
 	
 	private static final String tilinumero = "FI42 5000 1510 0000 23";	
 
-	//Metodi satunnaisen kyselyn tulostamiseen
+	/**
+	 * Metodi satunnaisen kyselyn tulostamiseen
+	 * @param con yhteys
+	 * @param kysely suoritettava kysely
+	 */
 	public static void tulostaKysely(Connection con, String kysely) {
 		try {
 			//Haetaan sarakkeiden maksimileveydet
@@ -64,7 +68,10 @@ public class ht2019{
 			System.out.println("tapahtui virhe: "+exc.getMessage());
 		}
 	}
-	//Metodi uuden asiakkaan lisäämiseksi tietokantaan.
+	/**
+	 * Metodi uuden asiakkaan lisäämiseksi tietokantaan.
+	 * @param con yhteys
+	 */
 	public static void lisaaUusiAsiakas(Connection con){
 		//Kysellään asiakkaan tiedot
 		Integer atunnus=uusiID(con, "asiakas", "asiakasid");
@@ -93,7 +100,10 @@ public class ht2019{
 			System.out.println("Virheelliset tiedot.");
 		
 	}
-	//Metodi työkohteen lisäämiseksi asiakkaalle
+	/**
+	 * Metodi työkohteen lisääseksi asiakkaalle
+	 * @param con yhteys
+	 */
 	public static void lisaaTyokohde(Connection con){
 		//Tulostetaan kannassa olevien asiakkaiden tiedot
 		String kysely="SELECT*FROM asiakas";
@@ -131,6 +141,14 @@ public class ht2019{
 		}
 		
 	}
+	/**
+	 * Metodi hakee käyttäjän antamaa arvoa tietokannan taulusta
+	 * @param con yhteys
+	 * @param taulu mihin tauluun haku kohdistuu
+	 * @param sarake mihin sarakkeeseen haku kohdistuu
+	 * @param arvo haettava arvo
+	 * @return true jos arvo löytyi taulusta
+	 */
 	public static boolean haeArvoa(Connection con, String taulu, String sarake, String arvo) {
 		try {
 			boolean value;
@@ -149,7 +167,15 @@ public class ht2019{
 			return false;
 		}
 	}
-	
+	/**
+	 * Metodi lukee käyttäjältä syötettä, kunnes se vastaa jotain taulun sarakearvoa, tai kunnes 
+	 * syötetään -1
+	 * @param con yhteys
+	 * @param taulu mihin tauluun valinta kohdistuu
+	 * @param sarake mihin sarakkeeseen valinta kohdistuu
+	 * @param mjono onko haettava arvo merkkijono
+	 * @return arvo, jos se löytyi taulusta, null jos keskeytys
+	 */
 	public static String valitse(Connection con, String taulu, String sarake, boolean mjono) {
 		System.out.println("Keskeytä syöttämällä -1");
 		String arvo=null;
@@ -185,16 +211,22 @@ public class ht2019{
 			return null;
 		}
 	}
-	//Metodi tuntiyöiden lisäämiseksi työkohteelle.
+	/**
+	 * Metodi tuntiyöiden lisäämiseksi työkohteelle.
+	 * @param con yhteys
+	 */
 	public static void lisaaTuntityosuorite(Connection con) {
+		//Tulostetaan työkohteiden tiedot
 		String kysely="SELECT a.nimi as asiakas, t.kohdeid, t.nimi as kohde, t.osoite FROM asiakas as a, työkohde as t where a.asiakasid=t.asiakasid";
 		tulostaKysely(con, kysely);
+		//Valitaan haluttu työkohde
 		Integer tyokohdeID=typeCaster.toInt(valitse(con, "työkohde", "kohdeid", false));
-
+		//Tulostetaan tuntitöiden tiedot
 		kysely="select*from tuntityöt";
 		tulostaKysely(con, kysely);
+		//Valitaan tuntityön tyyppi
 		String tuntityotyyppi=valitse(con, "tuntityöt", "tyyppi", true);
-		
+		//Valitaan työn määrä
 		System.out.print("Työn määrä (tunteina):");
 		Integer tunnit=inputManager.readInt();
 		
@@ -218,17 +250,8 @@ public class ht2019{
 					cst.close();
 				}
 				//Jos aikaisempia tuntityösuoritteita ei ole...
-				else {/*
+				else {
 					//Luodaan uusi suorite kys. työkohteelle.
-					//Uusi suoriteID luodaan generoimalla satunnainen luku väliltä [100, 999]. Pitää tehdä parempi versio myöhemmin.
-					suoriteID=uusiID(con, "suorite", "suoriteid");
-					//Lisätään uusi tuntityösuoritteista kirjaa pitävä rivi työkohteelle "suorite"-tauluun
-					pst=con.prepareStatement("INSERT INTO suorite VALUES (?,?,?)");
-					pst.setInt(1, suoriteID);
-					pst.setInt(2, tyokohdeID);
-					pst.setBoolean(3, true);//true --> Kyseessä tuntityösuorite.
-					pst.executeUpdate();*/
-					
 					suoriteID=luoUusiSuorite(con, tyokohdeID, true);
 					
 					//Lisätään uusi tuntityösuorite "suoritetuntityöt"-tauluun
@@ -250,13 +273,57 @@ public class ht2019{
 		else
 			System.out.println("Virheelliset tiedot.");
 	}
-
+	/**
+	 * Metodi tarvikkeen lisäämiseksi työkohteen tarviketietoihin
+	 * @param con yhteys
+	 */
+	public static void lisaaTarvikeKohteeseen(Connection con) {
+		//Tulostetaan työkohteiden tiedot
+		System.out.println("Valitse työkohde");
+		tulostaKysely(con, "select*from työkohde");
+		//Valitaan haluttu työkohde
+		Integer tyokohdeID=typeCaster.toInt(valitse(con, "työkohde", "kohdeid", false));
+		if(tyokohdeID!=null) {
+			try {
+				//Haetaan kannasta kys. työkohdetta vastaava tuntityösuorite
+				Integer suoriteID;
+				PreparedStatement pst=con.prepareStatement("SELECT suorite.suoriteid FROM suorite WHERE suorite.kohdeid=? and suorite.suoritetyyppi=true");
+				pst.setInt(1, tyokohdeID);
+				ResultSet rs=pst.executeQuery();
+				//Jos suorite-rivi oli olemassa...
+				if(rs.next()) {
+					suoriteID=rs.getInt(1);
+					//Lisätään tarvike kys. suoritteeseen
+					lisaaTarvikeSuoritteeseen(con, suoriteID);
+				}
+				//Jos työkohteella ei ole vielä tuntityösuoritteita
+				else {
+					//Luodaan kohteelle uusi suorite
+					suoriteID=luoUusiSuorite(con, tyokohdeID, true);
+					//Lisätään tarvike kys. suoritteeseen
+					lisaaTarvikeSuoritteeseen(con, suoriteID);
+				}
+			}
+			catch(SQLException e) {
+				System.out.println("tapahtui virhe: "+e.getMessage());
+			}
+		}
+		
+	}
+	/**
+	 * Metodi tarvikkeen lisäämiseksi osaksi suoritetietoja
+	 * @param con yhteys
+	 * @param suoriteid suoritteen tunnus
+	 */
 	public static void lisaaTarvikeSuoritteeseen(Connection con, int suoriteid) {
-		String kysely="SELECT tarvikeid, nimi, varastotilanne FROM tarvike WHERE varastotilanne>0";
+		//Tulostetaan tarvikkeiden tiedot
 		System.out.println("Tarvikkeet varastossa:");
+		String kysely="SELECT tarvikeid, nimi, varastotilanne FROM tarvike WHERE varastotilanne>0";
 		tulostaKysely(con, kysely);
+		//Valitaan haluttu tarvike
 		System.out.print("Tarvikkeen tunnus: ");
-		Integer tarvikeid=inputManager.readInt();
+		Integer tarvikeid=typeCaster.toInt(valitse(con, "tarvike", "tarvikeid", false));
+		//Valitaan tarvikkeiden määrä
 		System.out.print("Määrä: ");
 		Integer maara=inputManager.readInt();
 		
@@ -285,7 +352,13 @@ public class ht2019{
 		
 		
 	}
-	
+	/**
+	 * Metodi uuden pääavaimen(numeerinen) luomiseksi
+	 * @param con yhteys
+	 * @param taulu valittu taulu
+	 * @param sarake pääavainsarake
+	 * @return uusi id-luku
+	 */
 	public static Integer uusiID(Connection con, String taulu, String sarake) {
 		try {
 			PreparedStatement pst=con.prepareStatement("select maxValue(?,?)");
@@ -302,7 +375,10 @@ public class ht2019{
 		}
 		return null;
 	}
-	
+	/**
+	 * Metodi tietokantayhteyden avaamiseksi
+	 * @return yhteys
+	 */
 	public static Connection avaaYhteys() {
 		try {
 			Connection con = DriverManager.getConnection(PROTOKOLLA + "//" + PALVELIN + ":" + PORTTI + "/" + TIETOKANTA, KAYTTAJA, SALASANA);
@@ -317,13 +393,21 @@ public class ht2019{
 		return null;
 		
 	}
-	/******************** T3 *********************************************************/
+	/**
+	 * Metodi laskun luomiseksi tietokantaan
+	 * @param con yhteys
+	 * @param edeltajaid nyk. laskun edeltäjän tunnus
+	 * @param suoriteid laskuun liittyvän suoritteen tunnus
+	 * @param monesko monesko lasku kyseessä
+	 */
 	public static void luoLasku(Connection con, Integer edeltajaid, Integer suoriteid, Integer monesko) {
-		//Lasku lähetetään, kun se ollaan luotu
+		//Asetetaan lähetyspäiväksi nyk. päivämärä
 		Date lahetyspvm = new Date();
+		//Valitaan eräpäivä
 		System.out.println("Anna eräpäivä yyyy-dd-mm):");
 		Date erapvm=inputManager.readDate();
 		Integer laskuid=uusiID(con, "lasku", "laskuid");
+		//Muutetaan päivämäärät sql.date-tyyppiseksi
 		java.sql.Date lahetyspvmsql=typeCaster.toSqlDate(lahetyspvm);
 		java.sql.Date erapvmsql=typeCaster.toSqlDate(erapvm);
 		if(erapvm.getTime()>lahetyspvm.getTime() && lahetyspvmsql!=null && erapvmsql!=null) {
@@ -350,13 +434,19 @@ public class ht2019{
 			System.out.println("Virheelliset tiedot.");
 		
 	}
+	/**
+	 * Metodi uuden urakkasopimuksen luomiseksi tietokantaan
+	 * @param con yhteys
+	 */
 	public static void lisaaUrakkasopimusTietokantaan(Connection con) {
 
 		try {
+			//Alustetaan tarvittavat muuttujat
 			float kokonaissumma=0;
 			HashMap<String, Integer> tyomaarat=new HashMap<String, Integer>();
 			PreparedStatement pst=con.prepareStatement("SELECT tyyppi, hinta FROM tuntityöt");
 			ResultSet rs=pst.executeQuery();
+			//Määritellään urakkaan kuuluvat työt
 			System.out.println("Valitse urakkaan kuuluvat työt");
 			while(rs.next()) {
 				String tyotyyppi=rs.getString(1);
@@ -369,7 +459,7 @@ public class ht2019{
 					kokonaissumma+=tunnit*tuntihinta;
 				}
 			}
-
+			//Alustetaan tarvittavat muuttujat
 			HashMap<Integer, Integer> tarvikkeet=new HashMap<Integer, Integer>();
 			HashMap<Integer, Integer> varastotilanne=new HashMap<Integer, Integer>();
 			HashMap<Integer, Float> hinnat=new HashMap<Integer, Float>();
@@ -383,7 +473,7 @@ public class ht2019{
 				varastotilanne.put(tarvikeid, vtilanne);
 				hinnat.put(tarvikeid, myyntihinta);
 			}
-			
+			//Määritellään urakkaan kuuluvat tarvikkeet
 			System.out.println("Valitse urakkaan kuuluvat tarvikkeet");
 			tulostaKysely(con, "select tarvikeid, nimi, varastotilanne from tarvike");
 			boolean exit=false;
@@ -406,6 +496,7 @@ public class ht2019{
 			}while(!exit);
 			
 			System.out.println("Urakan kokonaishinta: "+kokonaissumma+"e");
+			//Märitellän laskuerien lukumärä (erät märitelty yhtä suuriksi, minimisuuruus 20e)
 			System.out.println("Laskuerien lukumäärä: ");
 			Integer laskueraLkm;
 			do {
@@ -469,12 +560,20 @@ public class ht2019{
 		}
 		
 	}
+	/**
+	 * Metodi tarviketietojen päivittämiseksi uuden hinnaston perusteella.
+	 * @param con yhteys
+	 * @param hinnasto hinnaston tiedostonimi "hinnasto.txt"
+	 */
 	public static void paivitaTarvikeHinnasto(Connection con, String hinnasto) {
 		try {
+			//Jos hinnaston avaaminen onnistui
 			if(fileReader.init(hinnasto)) {
+				//Alustetaan apumuuttujat
 				String line;
 				ArrayList<Integer> lisatyt=new ArrayList<Integer>();
 				ArrayList<Integer> poistettavat=new ArrayList<Integer>();
+				//Lisätään uudet tarvikkeet/päivitetään vanhojen hinnat
 				while((line=fileReader.readLine())!=null) {
 					String[] data=line.split(";");
 					lisatyt.add(typeCaster.toInt(data[0]));
@@ -492,13 +591,17 @@ public class ht2019{
 					cst.execute();
 					cst.close();
 				}
-				//Haetaan poistettavien tarvikkeiden tunnukset
+				//Alustetaan poistettavat tarvikkeet
 				PreparedStatement pst=con.prepareStatement("SELECT tarvikeid FROM tarvike");
 				ResultSet rs=pst.executeQuery();
 				while(rs.next()) {
 					poistettavat.add(rs.getInt(1));
 				}
+				//Valitaan poistettavat tarvikkeet
 				poistettavat.removeAll(lisatyt);
+				//Poistetaan vanhat tarvikkeet. 
+				//Tarvike poistetaan, jos:
+				//sitäi ole uudessa hinnastossa ja siihen ei viitata muista taulusta ja sen varastotilanne=0
 				for(int poistettavaID : poistettavat) {
 					CallableStatement cst=con.prepareCall("DELETE FROM tarvike WHERE tarvikeid=?");
 					cst.setInt(1, poistettavaID);
@@ -517,6 +620,10 @@ public class ht2019{
 			System.out.println("tapahtui virhe: "+exc.getMessage());
 		}
 	}
+	/**
+	 * Metodi tietokantayhteyden sulkemiseksi
+	 * @param con yhteys
+	 */
 	public static void suljeYhteys(Connection con) {
 		if(con!=null) {
 			try{
@@ -526,6 +633,15 @@ public class ht2019{
 			catch(SQLException exc){
 				System.out.println("Virhe yhteyden sulkemisessa");
 			}
+		}
+	}
+	public static void muodostaTuntityolasku(Connection con) {
+		//Valitaan haluttu työkohde
+		tulostaKysely(con, "select*from työkohde");
+		Integer tyokohdeID=typeCaster.toInt(valitse(con, "työkohde", "kohdeid", false));
+		//Jos toimintoa ei keskeytetty
+		if(tyokohdeID!=null) {
+			muodostaTuntityolasku(con, tyokohdeID, null, 1);
 		}
 	}
 	
@@ -795,19 +911,6 @@ public class ht2019{
 		UI kayttoliittyma = new UI(con);
 		// Kutsutaan käyttöliittymän ajometodia
 		kayttoliittyma.aja();
-		//Connection con2=avaaYhteys();
-		//lisaaTyokohde(con);
-		//lisaaTuntityosuorite(con);
-		//int h=uusiID(con, "urakkasopimus", "urakkaid");
-		//System.out.println(h);
-		//lisaaTarvikeSuoritteeseen(con, 200);
-		//paivitaTarvikeHinnasto(con, "hinnasto.txt");
-		//muodostaTuntityolasku(con, 100, null, 1);
-		//muodostaTuntityolasku(con, 100, 1, 2);
-
-		//tulostaKysely(con, "select*from tarvike");d
-
-		//tulostaKysely(con, "select*from tarvike");
 
 		
 		suljeYhteys(con);
