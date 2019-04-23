@@ -1,7 +1,7 @@
 --Funktio 1, Käytetään lisaaTuntityosuorite()-metodin yhteydessä. Funktio on luotu jo tietokantaan.
 --PL/psql-funktio tuntitöiden lisäämiseksi suoritteeseen.
 --Parametrit: sid=suoriteid, tyyppi_=tuntityön tyyppi, määrä_=työtuntien määrä
-CREATE OR REPLACE FUNCTION tuntityölisäys(sid integer, tyyppi_ text, määrä_ integer)
+CREATE OR REPLACE FUNCTION tuntityölisäys(sid integer, tyyppi_ text, määrä_ integer)--ok
 RETURNS void AS $$
 BEGIN
 	--Jos avaimella (sid, tyyppi_)-määritelty rivi jo olemassa
@@ -15,8 +15,8 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
---Funktio 2 (KESKENERÄINEN). Funktio on luotu jo tietokantaan.
-CREATE OR REPLACE FUNCTION tarvikelisäys(tid integer, sid integer, määrä_ integer)
+--Funktio 2 
+CREATE OR REPLACE FUNCTION tarvikelisäys(tid integer, sid integer, määrä_ integer)--ok
 RETURNS void AS $$
 BEGIN
 	IF (select count(*) from suoritetarvike where tarvikeid=tid and suoriteid=sid)=1 then
@@ -28,7 +28,7 @@ END
 $$ LANGUAGE plpgsql;
 
 --Funktio 3
-CREATE OR REPLACE FUNCTION maxValue(tbl text, col text, out res integer)
+CREATE OR REPLACE FUNCTION maxValue(tbl text, col text, out res integer)--ok
 as $$
 begin
 	execute format('select max(%s) from %s', col, tbl)
@@ -36,7 +36,7 @@ begin
 end
 $$ LANGUAGE plpgsql;
 --Funktio 4
-CREATE OR REPLACE FUNCTION lisäätarvike()
+CREATE OR REPLACE FUNCTION lisäätarvike()--ok
 RETURNS TRIGGER AS
 $BODY$
 BEGIN
@@ -50,7 +50,7 @@ END
 $BODY$
 LANGUAGE plpgsql;
 --Funktio 5
-CREATE OR REPLACE FUNCTION poistatarvike()
+CREATE OR REPLACE FUNCTION poistatarvike()--ok
 RETURNS TRIGGER AS
 $BODY$
 BEGIN
@@ -63,7 +63,7 @@ END
 $BODY$
 LANGUAGE plpgsql;
 --Funktio 6
-CREATE OR REPLACE FUNCTION lisääTarvikeHistoriaan()
+CREATE OR REPLACE FUNCTION lisääTarvikeHistoriaan()--ok
 RETURNS TRIGGER AS
 $BODY$
 BEGIN
@@ -76,7 +76,7 @@ END
 $BODY$
 LANGUAGE plpgsql;
 --Funktio 7
-CREATE OR REPLACE FUNCTION lisääTarvikeHistoriaan2()
+CREATE OR REPLACE FUNCTION lisääTarvikeHistoriaan2()--ok
 RETURNS TRIGGER AS
 $BODY$
 BEGIN
@@ -85,19 +85,7 @@ BEGIN
 END
 $BODY$
 LANGUAGE plpgsql;
---Funktio 8
-CREATE OR REPLACE FUNCTION tuntityölisäys(sid integer, tyyppi_ text, määrä_ integer)
-RETURNS void AS $$
-BEGIN
-	IF (select count(*) from suoritetuntityöt where tyyppi=tyyppi_ and suoriteid=sid)=1 then
-		update suoritetuntityöt set määrä=määrä::int + määrä_ where tyyppi=tyyppi_ and suoriteid=sid;
-	ELSE
-		insert into suoritetuntityöt values (sid, tyyppi_, määrä_);
-	END IF;
-END
-$$ LANGUAGE plpgsql;
---Triggeri 0
-CREATE TRIGGER lisää_tuntityösuorite
+
 --Triggeri 1
 CREATE TRIGGER lisää_poistettu_tarvike_historiaan
 AFTER DELETE ON tarvike
