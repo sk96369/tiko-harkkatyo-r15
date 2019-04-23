@@ -1,0 +1,9 @@
+100;ABB Jussi uppokytkin;20.90;kpl;24
+101;ABB Jussi uppopistorasia;10.90;kpl;24
+103;MCMK maakaapeli;1.90;metri;24
+151;ABB kojerasia 70mm;2.99;kpl;24
+160;Pistotulppa maadoitettu;1.99;kpl;24
+200;Vikavirtapistorasia uppo IP44;39.90;kpl;24
+205;Asennuskotelo IP55;6.99;kpl;24
+240;Sidontaspiraali 60mm;3.99;metri;24
+306;Automaattisulake 10A 280V;8.99;kpl;24

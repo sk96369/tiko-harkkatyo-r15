@@ -21,6 +21,15 @@ public final class typeCaster{
 			return null;
 		}
 	}
+	public static Float toFloat(String s) {
+		try {
+			float value=Float.parseFloat(s);
+			return value;
+		}
+		catch(NumberFormatException e) {
+			return null;
+		}
+	}
 	//Muutos String-tyypistä Date-tyypiksi
 	public static Date toDate(String s) {
 		try {

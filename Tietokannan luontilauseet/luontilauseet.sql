@@ -127,3 +127,12 @@ UNIQUE(suoriteid, moneskolasku),--Yksilöidään suoriteid,moneskolasku-yhdiste.
 FOREIGN KEY(suoriteid) REFERENCES suorite,
 FOREIGN KEY(edeltävälasku) REFERENCES lasku,
 CHECK(eräpvm > lähetyspvm));
+
+CREATE TABLE tarvikehistoria(
+tarvikeid INT NOT NULL,
+nimi VARCHAR(50) NOT NULL,
+sohinta NUMERIC(10, 2) NOT NULL,
+yksikkö VARCHAR(50) NOT NULL,
+myyntihinta NUMERIC(10, 2) NOT NULL,
+alv INT NOT NULL,
+PRIMARY KEY(tarvikeid));
