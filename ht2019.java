@@ -96,53 +96,78 @@ public class ht2019{
 	//Metodi työkohteen lisäämiseksi asiakkaalle
 	public static void lisaaTyokohde(Connection con){
 		//Tulostetaan kannassa olevien asiakkaiden tiedot
-		tulostaKysely(con, "SELECT*FROM asiakas");
-		//Kysellään työkohteeseen liittyvät tiedot
-		System.out.print("Työkohteen omistajan tunnus:");
-		Integer atunnus=inputManager.readInt();		
-		Integer tktunnus=uusiID(con, "työkohde", "kohdeid");
-		System.out.print("Työkohteen nimi:");
-		String tknimi=inputManager.readString();
-		System.out.print("Työkohteen osoite:");
-		String tkosoite=inputManager.readString();
-		System.out.print("Kotitalousvähennys? true/false:");
-		Boolean kvk=inputManager.readBoolean();
-		
-		if(atunnus!=null && tktunnus!=null && kvk!=null) {
-			try {
-				//Lisätään uusi työkohde
-				PreparedStatement pst=con.prepareStatement("INSERT INTO työkohde(kohdeid, asiakasid, nimi, osoite, kvkelpoinen) VALUES"
-												   +"(?,?,?,?,?)");
-				pst.setInt(1,  tktunnus);
-				pst.setInt(2, atunnus);
-				pst.setString(3, tknimi);
-				pst.setString(4, tkosoite);
-				pst.setBoolean(5, kvk);
-				pst.executeUpdate();
-				pst.close();
-				System.out.println("Uusi työkohde lisätty.");
-				
-			}
-			catch(SQLException exc) {
-				System.out.println("tapahtui virhe: "+exc.getMessage());
-			}
-		}
-		else
-			System.out.println("Virheelliset tiedot.");
-		
-	}
-	public static Integer valitseTyokohde(Connection con) {
-		String kysely="SELECT a.nimi as asiakas, t.kohdeid, t.nimi as kohde, t.osoite "+
-				"FROM asiakas as a, työkohde as t "+
-				"where a.asiakasid=t.asiakasid";
-		System.out.println("Työkohteiden tiedot:");
+		String kysely="SELECT*FROM asiakas";
 		tulostaKysely(con, kysely);
-		System.out.print("Työkohteen tunnus:");
-		Integer tkid=inputManager.readInt();
-		return tkid;
+		//Kysellään työkohteeseen liittyvät tiedot
+		Integer asiakasID=typeCaster.toInt(valitse(con, "asiakas", "asiakasid", false));
+	
+		Integer tyokohdeID=uusiID(con, "työkohde", "kohdeid");
 		
+		System.out.print("Työkohteen nimi:");
+		String tyokohdenimi=inputManager.readString();
+		
+		System.out.print("Työkohteen osoite:");
+		String tyokohdeosoite=inputManager.readString();
+		
+		System.out.print("Kotitalousvähennys? true/false:");
+		Boolean ktv=inputManager.readBoolean();
+		
+		try {
+			//Lisätään uusi työkohde
+			PreparedStatement pst=con.prepareStatement("INSERT INTO työkohde(kohdeid, asiakasid, nimi, osoite, kvkelpoinen) VALUES"
+												   +"(?,?,?,?,?)");
+			pst.setInt(1,  tyokohdeID);
+			pst.setInt(2, asiakasID);
+			pst.setString(3, tyokohdenimi);
+			pst.setString(4, tyokohdeosoite);
+			pst.setBoolean(5, ktv);
+			pst.executeUpdate();
+			pst.close();
+			System.out.println("Uusi työkohde lisätty.");
+				
+		}
+		catch(SQLException exc) {
+			System.out.println("tapahtui virhe: "+exc.getMessage());
+		}
 		
 	}
+	public static boolean haeArvoa(Connection con, String taulu, String sarake, String arvo) {
+		try {
+			boolean value;
+			String kysely=String.format("SELECT EXISTS(SELECT 1 FROM %s WHERE %s=%s)", taulu, sarake, arvo);
+			PreparedStatement pst=con.prepareStatement(kysely);
+			ResultSet rs=pst.executeQuery();
+			rs.next();
+			value=rs.getBoolean(1);
+			rs.close();
+			pst.close();
+			return value;
+			
+		}
+		catch(SQLException e) {
+			System.out.println("tapahtui virhe: "+e.getMessage());
+			return false;
+		}
+	}
+	
+	public static String valitse(Connection con, String taulu, String sarake, boolean mjono) {
+		System.out.println("Keskeytä syöttämällä -1");
+		String arvo=null;
+		boolean exit;
+		do {
+			exit=true;
+			System.out.print("Valitse tunnus/tyyppi:");
+			arvo=inputManager.readString();
+			if(arvo.equals("-1")) {
+				arvo=null;
+				exit=true;
+			}
+			else exit=(mjono)?haeArvoa(con, taulu, sarake, ("\'"+arvo+"\'")) : haeArvoa(con, taulu, sarake, arvo);
+			if(!exit) System.out.println("Virheellinen tunnus/tyyppi.");
+		}while(!exit);
+		return arvo;
+	}
+	
 	public static Integer luoUusiSuorite(Connection con, Integer tyokohdeID, boolean tyyppi) {
 		try {
 			Integer suoriteID=uusiID(con, "suorite", "suoriteid");
@@ -162,19 +187,23 @@ public class ht2019{
 	}
 	//Metodi tuntiyöiden lisäämiseksi työkohteelle.
 	public static void lisaaTuntityosuorite(Connection con) {
-		Integer tkID=valitseTyokohde(con);				
+		String kysely="SELECT a.nimi as asiakas, t.kohdeid, t.nimi as kohde, t.osoite FROM asiakas as a, työkohde as t where a.asiakasid=t.asiakasid";
+		tulostaKysely(con, kysely);
+		Integer tyokohdeID=typeCaster.toInt(valitse(con, "työkohde", "kohdeid", false));
+
+		kysely="select*from tuntityöt";
+		tulostaKysely(con, kysely);
+		String tuntityotyyppi=valitse(con, "tuntityöt", "tyyppi", true);
 		
-		System.out.print("Työn tyyppi (Suunnittelu/Työ/Aputyö):");
-		String ttyyppi=inputManager.readString();							//ttyyppi=tuntityön tyyppi
 		System.out.print("Työn määrä (tunteina):");
-		Integer tunnit=inputManager.readInt();				//Työtuntien määrä
-		if(tkID!=null && tunnit!=null) {
+		Integer tunnit=inputManager.readInt();
+		
+		if(tyokohdeID!=null && tuntityotyyppi!=null && tunnit>0) {
 			try {
 				int suoriteID;
 				//Suoritetaan kysely, jossa tarkastetaan, onko työkohteella vielä yhtään tuntityösuoritteita
-				PreparedStatement pst=con.prepareStatement("SELECT suorite.suoriteid "+
-												   "FROM suorite WHERE suorite.kohdeid=? and suorite.suoritetyyppi=true");
-				pst.setInt(1, tkID);
+				PreparedStatement pst=con.prepareStatement("SELECT suorite.suoriteid FROM suorite WHERE suorite.kohdeid=? and suorite.suoritetyyppi=true");
+				pst.setInt(1, tyokohdeID);
 				ResultSet rs=pst.executeQuery();
 				//Jos aikaisempia tuntityösuoritteita löytyy...
 				if(rs.next()) {
@@ -183,7 +212,7 @@ public class ht2019{
 					//Suoritetaan päivitys suoritetuntityöt-tauluun. tuntityölisäys()-funktion toteutus määritelty PLfunktiot.sql tiedostossa
 					CallableStatement cst=con.prepareCall("select tuntityölisäys(?,?,?)");
 					cst.setInt(1, suoriteID);
-					cst.setString(2, ttyyppi);
+					cst.setString(2, tuntityotyyppi);
 					cst.setInt(3, tunnit);
 					cst.execute();
 					cst.close();
@@ -196,14 +225,14 @@ public class ht2019{
 					//Lisätään uusi tuntityösuoritteista kirjaa pitävä rivi työkohteelle "suorite"-tauluun
 					pst=con.prepareStatement("INSERT INTO suorite VALUES (?,?,?)");
 					pst.setInt(1, suoriteID);
-					pst.setInt(2, tkID);
+					pst.setInt(2, tyokohdeID);
 					pst.setBoolean(3, true);//true --> Kyseessä tuntityösuorite.
 					pst.executeUpdate();
 					
 					//Lisätään uusi tuntityösuorite "suoritetuntityöt"-tauluun
 					pst=con.prepareStatement("INSERT INTO suoritetuntityöt VALUES (?,?,?)");
 					pst.setInt(1, suoriteID);
-					pst.setString(2, ttyyppi);
+					pst.setString(2, tuntityotyyppi);
 					pst.setInt(3, tunnit);
 					pst.executeUpdate();
 				}
@@ -387,12 +416,17 @@ public class ht2019{
 			}while(!exit);
 			
 			//Luodaan uusi suorite urakalle
-			Integer tyokohdeID=valitseTyokohde(con);
+			String kysely="SELECT a.nimi as asiakas, t.kohdeid, t.nimi as kohde, t.osoite FROM asiakas as a, työkohde as t where a.asiakasid=t.asiakasid";
+			tulostaKysely(con, kysely);
+			Integer tyokohdeID=typeCaster.toInt(valitse(con, "työkohde", "kohdeid", false));
+			
 			Integer suoriteID=luoUusiSuorite(con, tyokohdeID, false);
-			if(suoriteID!=null) {
+			
+			Integer urakkaID=uusiID(con, "urakkasopimus", "urakkaid");
+			
+			if(tyokohdeID!=null && suoriteID!=null && urakkaID!=null) {
 
 				//Luodaan uusi urakkasopimus
-				Integer urakkaID=uusiID(con, "urakkasopimus", "urakkaid");
 				CallableStatement cst=con.prepareCall("INSERT INTO urakkasopimus VALUES(?,?,?,?,?)");
 				cst.setInt(1, urakkaID);cst.setInt(2, suoriteID);cst.setFloat(3, kokonaissumma/laskueraLkm);
 				cst.setInt(4, laskueraLkm);cst.setInt(5, laskueraLkm);
@@ -432,6 +466,54 @@ public class ht2019{
 			System.out.println("tapahtui virhe: "+exc.getMessage());
 		}
 		
+	}
+	public static void paivitaTarvikeHinnasto(Connection con, String hinnasto) {
+		try {
+			if(fileReader.init(hinnasto)) {
+				String line;
+				ArrayList<Integer> lisatyt=new ArrayList<Integer>();
+				ArrayList<Integer> poistettavat=new ArrayList<Integer>();
+				while((line=fileReader.readLine())!=null) {
+					String[] data=line.split(";");
+					lisatyt.add(typeCaster.toInt(data[0]));
+					CallableStatement cst=con.prepareCall("INSERT INTO tarvike VALUES(?,?,?,?,?,?,?)");
+					cst.setInt(1, typeCaster.toInt(data[0]));
+					cst.setString(2, data[1]);
+					cst.setFloat(3, typeCaster.toFloat(data[2]));
+					cst.setString(4, data[3]);
+					cst.setInt(5, 0);
+					
+					float myyntihinta=(float)typeCaster.toFloat(data[2])*(float)1.25;
+					cst.setFloat(6, myyntihinta);
+					cst.setInt(7, typeCaster.toInt(data[4]));
+					
+					cst.execute();
+					cst.close();
+				}
+				//Haetaan poistettavien tarvikkeiden tunnukset
+				PreparedStatement pst=con.prepareStatement("SELECT tarvikeid FROM tarvike");
+				ResultSet rs=pst.executeQuery();
+				while(rs.next()) {
+					poistettavat.add(rs.getInt(1));
+				}
+				poistettavat.removeAll(lisatyt);
+				for(int poistettavaID : poistettavat) {
+					CallableStatement cst=con.prepareCall("DELETE FROM tarvike WHERE tarvikeid=?");
+					cst.setInt(1, poistettavaID);
+					cst.execute();
+					cst.close();
+				}
+				System.out.println("Tarviketiedot päivitetty.");
+				
+				
+			}
+			else System.out.print("Hinnastoa ei löydy");
+			
+			fileReader.closeFile();
+		}
+		catch(SQLException exc) {
+			System.out.println("tapahtui virhe: "+exc.getMessage());
+		}
 	}
 	public static void suljeYhteys(Connection con) {
 		if(con!=null) {
@@ -713,11 +795,18 @@ public class ht2019{
 		//int h=uusiID(con, "urakkasopimus", "urakkaid");
 		//System.out.println(h);
 		//lisaaTarvikeSuoritteeseen(con, 200);
-		
+		//paivitaTarvikeHinnasto(con, "hinnasto.txt");
 		//muodostaTuntityolasku(con, 100, null, 1);
 		//muodostaTuntityolasku(con, 100, 1, 2);
-		tulostaKysely(con, "select*from tarvike");
+		//tulostaKysely(con, "select*from tarvike");d
 		//muodostaHintaArvio(con, 100);
+		String kys="SELECT*FROM asiakas";
+		tulostaKysely(con, kys);
+		String tunnus=valitse(con, "asiakas", "asiakasid", false);
+		//String tunnus=valitse(con, "tarvike", "tarvikeid", false);
+		//String tunnus=valitse(con, "tuntityöt", "tyyppi", true);
+		//String tunnus=valitse(con, "työkohde", "kohdeid", false);
+		System.out.println("Valitsit : "+typeCaster.toInt(tunnus));
 		suljeYhteys(con);
 	}
 	
