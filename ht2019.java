@@ -65,7 +65,7 @@ public class ht2019{
 		}
 	}
 	//Metodi uuden asiakkaan lisäämiseksi tietokantaan.
-	public void lisaaUusiAsiakas(Connection con){
+	public static void lisaaUusiAsiakas(Connection con){
 		//Kysellään asiakkaan tiedot
 		Integer atunnus=uusiID(con, "asiakas", "asiakasid");
 		System.out.print("Asiakkaan nimi:");
@@ -200,7 +200,7 @@ public class ht2019{
 		
 		if(tyokohdeID!=null && tuntityotyyppi!=null && tunnit>0) {
 			try {
-				int suoriteID;
+				Integer suoriteID;
 				//Suoritetaan kysely, jossa tarkastetaan, onko työkohteella vielä yhtään tuntityösuoritteita
 				PreparedStatement pst=con.prepareStatement("SELECT suorite.suoriteid FROM suorite WHERE suorite.kohdeid=? and suorite.suoritetyyppi=true");
 				pst.setInt(1, tyokohdeID);
@@ -218,7 +218,7 @@ public class ht2019{
 					cst.close();
 				}
 				//Jos aikaisempia tuntityösuoritteita ei ole...
-				else {
+				else {/*
 					//Luodaan uusi suorite kys. työkohteelle.
 					//Uusi suoriteID luodaan generoimalla satunnainen luku väliltä [100, 999]. Pitää tehdä parempi versio myöhemmin.
 					suoriteID=uusiID(con, "suorite", "suoriteid");
@@ -227,7 +227,9 @@ public class ht2019{
 					pst.setInt(1, suoriteID);
 					pst.setInt(2, tyokohdeID);
 					pst.setBoolean(3, true);//true --> Kyseessä tuntityösuorite.
-					pst.executeUpdate();
+					pst.executeUpdate();*/
+					
+					suoriteID=luoUusiSuorite(con, tyokohdeID, true);
 					
 					//Lisätään uusi tuntityösuorite "suoritetuntityöt"-tauluun
 					pst=con.prepareStatement("INSERT INTO suoritetuntityöt VALUES (?,?,?)");
@@ -789,6 +791,10 @@ public class ht2019{
 
 	public static void main(String args[]) {
 		Connection con = avaaYhteys();
+		// Luodaan käyttöliittymäolio
+		UI kayttoliittyma = new UI(con);
+		// Kutsutaan käyttöliittymän ajometodia
+		kayttoliittyma.aja();
 		//Connection con2=avaaYhteys();
 		//lisaaTyokohde(con);
 		//lisaaTuntityosuorite(con);
@@ -798,15 +804,12 @@ public class ht2019{
 		//paivitaTarvikeHinnasto(con, "hinnasto.txt");
 		//muodostaTuntityolasku(con, 100, null, 1);
 		//muodostaTuntityolasku(con, 100, 1, 2);
+
 		//tulostaKysely(con, "select*from tarvike");d
-		//muodostaHintaArvio(con, 100);
-		String kys="SELECT*FROM asiakas";
-		tulostaKysely(con, kys);
-		String tunnus=valitse(con, "asiakas", "asiakasid", false);
-		//String tunnus=valitse(con, "tarvike", "tarvikeid", false);
-		//String tunnus=valitse(con, "tuntityöt", "tyyppi", true);
-		//String tunnus=valitse(con, "työkohde", "kohdeid", false);
-		System.out.println("Valitsit : "+typeCaster.toInt(tunnus));
+
+		//tulostaKysely(con, "select*from tarvike");
+
+		
 		suljeYhteys(con);
 	}
 	
