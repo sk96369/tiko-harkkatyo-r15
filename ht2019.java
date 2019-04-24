@@ -17,8 +17,9 @@ public class ht2019{
 	private static final String KAYTTAJA = "tp427552";
 	private static final String SALASANA = "tuomas";
 	
-	private static final String tilinumero = "FI42 5000 1510 0000 23";	
-
+	private static final String tilinumero = "FI42 5000 1510 0000 23";
+	
+	
 	/**
 	 * Metodi satunnaisen kyselyn tulostamiseen
 	 * @param con yhteys
@@ -26,6 +27,7 @@ public class ht2019{
 	 */
 	public static void tulostaKysely(Connection con, String kysely) {
 		try {
+			con.setReadOnly(true);
 			//Haetaan sarakkeiden maksimileveydet
 			PreparedStatement pst=con.prepareStatement(kysely, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			ResultSet rs=pst.executeQuery();
@@ -62,10 +64,17 @@ public class ht2019{
 			System.out.println();
 			pst.close();
 			rs.close();
+			
+			con.setReadOnly(false);
 		
 		}
 		catch(SQLException exc) {
 			System.out.println("tapahtui virhe: "+exc.getMessage());
+			try{
+				con.setReadOnly(false);
+			}
+			catch(SQLException e){}
+			
 		}
 	}
 	/**
@@ -96,8 +105,6 @@ public class ht2019{
 				System.out.println("tapahtui virhe: "+exc.getMessage());
 			}
 		}
-		else
-			System.out.println("Virheelliset tiedot.");
 		
 	}
 	/**
@@ -107,38 +114,42 @@ public class ht2019{
 	public static void lisaaTyokohde(Connection con){
 		//Tulostetaan kannassa olevien asiakkaiden tiedot
 		String kysely="SELECT*FROM asiakas";
+		System.out.println("\nValitse työkohteen omistaja:");
 		tulostaKysely(con, kysely);
 		//Kysellään työkohteeseen liittyvät tiedot
 		Integer asiakasID=typeCaster.toInt(valitse(con, "asiakas", "asiakasid", false));
-	
-		Integer tyokohdeID=uusiID(con, "työkohde", "kohdeid");
+		if(asiakasID!=null){
+			Integer tyokohdeID=uusiID(con, "työkohde", "kohdeid");
 		
-		System.out.print("Työkohteen nimi:");
-		String tyokohdenimi=inputManager.readString();
+			System.out.print("Työkohteen nimi:");
+			String tyokohdenimi=inputManager.readString();
 		
-		System.out.print("Työkohteen osoite:");
-		String tyokohdeosoite=inputManager.readString();
+			System.out.print("Työkohteen osoite:");
+			String tyokohdeosoite=inputManager.readString();
 		
-		System.out.print("Kotitalousvähennys? true/false:");
-		Boolean ktv=inputManager.readBoolean();
+			System.out.print("Kotitalousvähennys? true->kyllä, muu syöte->ei:");
+			Boolean ktv=inputManager.readBoolean();
 		
-		try {
-			//Lisätään uusi työkohde
-			PreparedStatement pst=con.prepareStatement("INSERT INTO työkohde(kohdeid, asiakasid, nimi, osoite, kvkelpoinen) VALUES"
-												   +"(?,?,?,?,?)");
-			pst.setInt(1,  tyokohdeID);
-			pst.setInt(2, asiakasID);
-			pst.setString(3, tyokohdenimi);
-			pst.setString(4, tyokohdeosoite);
-			pst.setBoolean(5, ktv);
-			pst.executeUpdate();
-			pst.close();
-			System.out.println("Uusi työkohde lisätty.");
+			try {
+				//Lisätään uusi työkohde
+				PreparedStatement pst=con.prepareStatement("INSERT INTO työkohde(kohdeid, asiakasid, nimi, osoite, kvkelpoinen) VALUES"
+													+"(?,?,?,?,?)");
+				pst.setInt(1,  tyokohdeID);
+				pst.setInt(2, asiakasID);
+				pst.setString(3, tyokohdenimi);
+				pst.setString(4, tyokohdeosoite);
+				pst.setBoolean(5, ktv);
+				pst.executeUpdate();
+				pst.close();
+				System.out.println("Uusi työkohde lisätty.");
 				
+			}
+			catch(SQLException exc) {
+				System.out.println("tapahtui virhe: "+exc.getMessage());
+			}
 		}
-		catch(SQLException exc) {
-			System.out.println("tapahtui virhe: "+exc.getMessage());
-		}
+	
+		
 		
 	}
 	/**
@@ -163,7 +174,7 @@ public class ht2019{
 			
 		}
 		catch(SQLException e) {
-			System.out.println("tapahtui virhe: "+e.getMessage());
+			//System.out.println("tapahtui virhe: "+e.getMessage());
 			return false;
 		}
 	}
@@ -217,11 +228,14 @@ public class ht2019{
 	 */
 	public static void lisaaTuntityosuorite(Connection con) {
 		//Tulostetaan työkohteiden tiedot
+		System.out.println("\nValitse työkohde:");
 		String kysely="SELECT a.nimi as asiakas, t.kohdeid, t.nimi as kohde, t.osoite FROM asiakas as a, työkohde as t where a.asiakasid=t.asiakasid";
 		tulostaKysely(con, kysely);
 		//Valitaan haluttu työkohde
 		Integer tyokohdeID=typeCaster.toInt(valitse(con, "työkohde", "kohdeid", false));
+		if(tyokohdeID!=null){
 		//Tulostetaan tuntitöiden tiedot
+		System.out.println("\nValitse työsuorite:");
 		kysely="select*from tuntityöt";
 		tulostaKysely(con, kysely);
 		//Valitaan tuntityön tyyppi
@@ -230,7 +244,7 @@ public class ht2019{
 		System.out.print("Työn määrä (tunteina):");
 		Integer tunnit=inputManager.readInt();
 		
-		if(tyokohdeID!=null && tuntityotyyppi!=null && tunnit>0) {
+		if(tuntityotyyppi!=null && tunnit>0) {
 			try {
 				Integer suoriteID;
 				//Suoritetaan kysely, jossa tarkastetaan, onko työkohteella vielä yhtään tuntityösuoritteita
@@ -264,7 +278,7 @@ public class ht2019{
 				
 				rs.close();
 				pst.close();
-				
+				System.out.println("Suorite lisätty.");
 			}
 			catch(SQLException exc){
 				System.out.println("tapahtui virhe: "+exc.getMessage());
@@ -272,14 +286,15 @@ public class ht2019{
 		}
 		else
 			System.out.println("Virheelliset tiedot.");
+		}
 	}
 	/**
 	 * Metodi tarvikkeen lisäämiseksi työkohteen tarviketietoihin
 	 * @param con yhteys
 	 */
 	public static void lisaaTarvikeKohteeseen(Connection con) {
+		System.out.println("\nValitse työkohde:");
 		//Tulostetaan työkohteiden tiedot
-		System.out.println("Valitse työkohde");
 		tulostaKysely(con, "select*from työkohde");
 		//Valitaan haluttu työkohde
 		Integer tyokohdeID=typeCaster.toInt(valitse(con, "työkohde", "kohdeid", false));
@@ -303,6 +318,7 @@ public class ht2019{
 					//Lisätään tarvike kys. suoritteeseen
 					lisaaTarvikeSuoritteeseen(con, suoriteID);
 				}
+				System.out.println("Tarvike lisätty.");
 			}
 			catch(SQLException e) {
 				System.out.println("tapahtui virhe: "+e.getMessage());
@@ -317,7 +333,7 @@ public class ht2019{
 	 */
 	public static void lisaaTarvikeSuoritteeseen(Connection con, int suoriteid) {
 		//Tulostetaan tarvikkeiden tiedot
-		System.out.println("Tarvikkeet varastossa:");
+		System.out.println("\nTarvikkeet varastossa:");
 		String kysely="SELECT tarvikeid, nimi, varastotilanne FROM tarvike WHERE varastotilanne>0";
 		tulostaKysely(con, kysely);
 		//Valitaan haluttu tarvike
@@ -492,24 +508,25 @@ public class ht2019{
 					}
 					else System.out.println("Varastomääräiian pieni.");
 				}
-				else System.out.println("Virheellinen tuotetunnus.");
+				else if(!exit) System.out.println("Virheellinen tuotetunnus.");
 			}while(!exit);
 			
 			System.out.println("Urakan kokonaishinta: "+kokonaissumma+"e");
 			//Märitellän laskuerien lukumärä (erät märitelty yhtä suuriksi, minimisuuruus 20e)
-			System.out.println("Laskuerien lukumäärä: ");
 			Integer laskueraLkm;
 			do {
 				exit=true;
+				System.out.println("Laskuerien lukumäärä: ");
 				laskueraLkm=inputManager.readInt();
 				if((kokonaissumma/laskueraLkm)<20) {
-					System.out.print("Laskuerän suuruus liian pieni, "+(kokonaissumma/laskueraLkm)+"e. Minimi 20e");
+					System.out.print("Laskuerän suuruus liian pieni, "+(kokonaissumma/laskueraLkm)+"e. Minimi 20e\n");
 					exit=false;
 				}
 			}while(!exit);
 			
 			//Luodaan uusi suorite urakalle
 			String kysely="SELECT a.nimi as asiakas, t.kohdeid, t.nimi as kohde, t.osoite FROM asiakas as a, työkohde as t where a.asiakasid=t.asiakasid";
+			System.out.println("\nValitse urakan kohde.");
 			tulostaKysely(con, kysely);
 			Integer tyokohdeID=typeCaster.toInt(valitse(con, "työkohde", "kohdeid", false));
 			
@@ -547,7 +564,7 @@ public class ht2019{
 						cst.execute();
 					}
 				}
-				System.out.print("Uusi urakkasopimus lisätty kantaan");
+				System.out.print("Uusi urakkasopimus lisätty kantaan\n");
 				rs.close();
 				pst.close();
 				cst.close();
@@ -637,7 +654,9 @@ public class ht2019{
 	}
 	public static void muodostaTuntityolasku(Connection con) {
 		//Valitaan haluttu työkohde
-		tulostaKysely(con, "select*from työkohde");
+		System.out.println("\nValitse työkohde");
+		String kysely="SELECT a.nimi as asiakas, t.kohdeid, t.nimi as kohde, t.osoite FROM asiakas as a, työkohde as t where a.asiakasid=t.asiakasid";
+		tulostaKysely(con, kysely);
 		Integer tyokohdeID=typeCaster.toInt(valitse(con, "työkohde", "kohdeid", false));
 		//Jos toimintoa ei keskeytetty
 		if(tyokohdeID!=null) {
