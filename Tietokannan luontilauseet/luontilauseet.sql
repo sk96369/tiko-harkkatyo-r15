@@ -6,10 +6,10 @@ laskutusosoite VARCHAR(50) NOT NULL,	--Asiakkaan laskutusosoite
 PRIMARY KEY(asiakasid));
 
 INSERT INTO asiakas VALUES
-(11, 'Ville Viima', 'Tammelankatu 55'),
-(22, 'Jussi Joki', 'Vellamonkatu 10'),
-(33, 'Pekka Puska', 'Käypytie 13'),
-(44, 'Jenni Joki', 'Kannaksenkatu 43');
+(10, 'Ville Viima', 'Tammelankatu 55'),
+(11, 'Jussi Joki', 'Vellamonkatu 10'),
+(12, 'Pekka Puska', 'Käypytie 13'),
+(13, 'Jenni Joki', 'Kannaksenkatu 43');
 
 CREATE TABLE työkohde(
 kohdeid INT NOT NULL,					--Kohteen tunnus
@@ -21,11 +21,11 @@ PRIMARY KEY(kohdeid),
 FOREIGN KEY(asiakasid) REFERENCES asiakas);
 
 INSERT INTO työkohde VALUES
-(111, 11, 'Oma asunto', 'Tammelankatu 55', true),
-(112, 11, 'Varastohalli', 'Mattilankatu 10', false),
-(221, 22, 'Kesämökki', 'Leppästentie 88', true),
-(331, 33, 'Oma asunto', 'Käpytie 13', true),
-(441, 44, 'Isovanhempien asunto', 'Kannaksenkatu 44', true);
+(100, 10, 'Oma asunto', 'Tammelankatu 55', true),
+(101, 10, 'Varastohalli', 'Mattilankatu 10', false),
+(102, 11, 'Kesämökki', 'Leppästentie 88', true),
+(103, 12, 'Oma asunto', 'Käpytie 13', true),
+(104, 13, 'Isovanhempien asunto', 'Kannaksenkatu 44', true);
 
 CREATE TABLE suorite(					--Työsuoitetta kuvaava taulu
 suoriteid INT NOT NULL,					--Työsuoritteen tunnus
@@ -33,10 +33,6 @@ kohdeid INT NOT NULL,					--Kohteen tunnus
 suoritetyyppi BOOLEAN NOT NULL,			--Suoritteen tyyppi, tuntityö=1, urakkatyö=0. (Lisätty kyselyjen helpottamiseksi)
 PRIMARY KEY(suoriteid),
 FOREIGN KEY(kohdeid) REFERENCES työkohde);
-
-INSERT INTO suorite VALUES				--Testiarvoja
-(777, 111, true),
-(888, 112, true);
 
 
 CREATE TABLE tarvike(
@@ -52,7 +48,7 @@ PRIMARY KEY(tarvikeid));
 INSERT INTO tarvike VALUES
 (100, 'ABB Jussi uppokytkin', 19.90, 'kpl', 20, 24.90, 24),
 (101, 'ABB Jussi uppopistorasia', 12.90, 'kpl', 20, 15.90, 24),
-(102, 'ABB nysä M16 20kpl', 7.99, 'kpl', 10, 9.99, 24),
+(102, 'ABB nysä M16 20kpl', 7.99, 'kpl', 0, 9.99, 24),
 (103, 'MCMK maakaapeli', 1.5, 'metri', 200, 1.9, 24),
 (104, 'MMJ 3x1,5 asennuskaapeli', 0.77, 'metri', 100, 0.99, 24),
 (105, 'Yleissulake 10A 500V', 0.40, 'kpl', 50, 0.50, 24),
@@ -68,7 +64,6 @@ PRIMARY KEY(tarvikeid, suoriteid),
 FOREIGN KEY(tarvikeid) REFERENCES tarvike,
 FOREIGN KEY(suoriteid) REFERENCES suorite);
 
-INSERT INTO suoritetarvike VALUES (106, 200, 6);
 
 CREATE TABLE tuntityöt(
 tyyppi CHAR(50) NOT NULL,				--Tuntityö tyyppi, suunnittelu/työ/aputyö
@@ -88,11 +83,6 @@ määrä INT NOT NULL,						--Montako tuntia töitä kuuluu suoritteeseen
 PRIMARY KEY(suoriteid, tyyppi),
 FOREIGN KEY(suoriteid) REFERENCES suorite,
 FOREIGN KEY(tyyppi) REFERENCES tuntityöt);
-
-INSERT INTO suoritetuntityöt VALUES		--Testiarvoja
-(777, 'Suunnittelu', 2),
-(777, 'Työ', 20),
-(888, 'Työ', 10);
 
 
 CREATE TABLE urakkasopimus(				--Urakkapohjaista työtä kuvaava taulu
