@@ -1,7 +1,6 @@
 /* Luokka syötteen lukemiseen ja tulosteen tulostamiseen*/
 
 import java.io.*;
-import java.sql.*;
 
 public class UI
 {	
@@ -56,12 +55,18 @@ public class UI
 	toiminto suoritetaan */
 	private void kasitteleSyote(String s) throws IllegalArgumentException
 	{
+		String kysely = "";
+		int tunnus = 0;
 		switch(s)
 		{
+			// Pelkällä Enterin painalluksella tulostaa tyhjän rivin
+			case "":
+				System.out.println("");
+				break;
 			case "kysely":
 				System.out.println("Syötä SQL-kysely:");
 				System.out.print("psql=>");
-				String kysely = inputManager.readString();
+				kysely = inputManager.readString();
 				ht2019.tulostaKysely(con, kysely + "\n");
 				break;
 			case "lisää työkohde":
@@ -74,29 +79,47 @@ public class UI
 				ht2019.lisaaUrakkasopimusTietokantaan(con);
 				break;
 			case "lisää tarvike":
-				ht2019.lisaaTarvikeKohteeseen(con);//kts. metodi
+				System.out.println("Syötä suoritteen tunnus: [numero 0-*]");
+				tunnus = inputManager.readInt();
+				ht2019.lisaaTarvikeSuoritteeseen(con, tunnus);
 				break;
-			case "lisää suorite":
+			case "lisää tuntityösuorite":
 				ht2019.lisaaTuntityosuorite(con);
 				break;
 			case "luo lasku":
-				ht2019.muodostaTuntityolasku(con);//kts metodi
+				System.out.println("Syötä tuntityölaskun kohteen tunnus: ");
+				tunnus = inputManager.readInt();
+				ht2019.muodostaTuntityolasku(con, tunnus, null, 1);
+				break;
+			case "arvioi hinta":
+				System.out.println("Syötä arvioitavan kohteen tunnus:");
+				System.out.print("ID = ");
+				tunnus = inputManager.readInt();
+				ht2019.muodostaHintaArvio(con, tunnus);
+				break;
+			case "help":
+				tulostaOhjeet();
 				break;
 			case "luo muistutuslaskut":
-				// KESKEN
-				System.out.println("Puuttuu");
+				System.out.println("Haetaan erääntyneet laskut...");
+				int[] eraantyneidenTunnukset = ht2019.haeEraantyneetLaskut(con);
+				if(eraantyneidenTunnukset != null)
+				{
+					System.out.println("Erääntyneitä laskuja ei löytynyt.");
+				}
+				else
+				{
+					System.out.println("Löydettiin " + eraantyneidenTunnukset.length + " erääntynyttä laskua, luodaan muistutuslaskut...");
+					for(int index = 0;index < eraantyneidenTunnukset.length;index++)
+					{
+						
+					}
+					ht2019.muodostaTuntityolasku(con, 
+				}
 				break;
 			case "lopeta":
 				System.out.println("Suljetaan ohjelma.");
 				kaynnissa = false;
-				break;
-			case "päivitä hinnasto":
-				System.out.print("Anna hinnaston sisältävä tiedosto: ");
-				String tiedosto=inputManager.readString();
-				ht2019.paivitaTarvikeHinnasto(con, tiedosto);
-				break;
-			case "help":
-				tulostaOhjeet();
 				break;
 			default:
 				// Jos komentoa ei tunnisteta, heitetään virheilmoitus

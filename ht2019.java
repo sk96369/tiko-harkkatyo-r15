@@ -927,6 +927,45 @@ public class ht2019{
 			System.out.println("Tapahtui virhe: " + e);
 		}
 	}
+	
+	/* Funktio hakee lasku-taulusta kaikki laskut, joiden eräpäivä on mennyt,
+	ja joita ei ole vielä maksettu */
+	public static int[] haeEraantyneetLaskut(con)
+	{
+		try{
+			// Verrataan lasku-taulun rivejen eräpäivämääriä nykyiseen
+			// päivään, jotta saadaan vanhentuneet laskut
+			// ja niiden lukumäärä.
+			int lkm = 0;
+			PreparedStatement lkmPst = con.prepareStatement("SELECT COUNT(*) AS lkm FROM lasku WHERE eräpvm < now()");
+			ResultSet lkmRs = lkmPst.executeQuery();
+			lkmRs.next();
+			lkm = lkmRs.getInt("lkm");
+			lkmPst.close();
+			lkmRs.close();
+			if(lkm > 0)
+			{
+				int[] taulukko = new int[lkm];
+				PreparedStatement pst = con.prepareStatement("SELECT laskuid FROM lasku WHERE eräpvm < now()");
+				ResultSet eraantyneetRs = pst.executeQuery();
+				for(int index = 0;eraantyneetRs.next();index++)
+				{
+					taulukko[index] = eraantyneetRs.getInt(laskuid);
+				}
+				pst.close();
+				eraantyneetRs.close();
+				return taulukko;
+			}
+			// Palautetaan null-arvo, jos erääntyneitä laskuja ei löytynyt
+			else
+				return null;
+			
+		}
+		catch(SQLException e)
+		{
+			System.out.println("Tapahtui virhe: " + e);
+		}
+	}
 
 	public static void main(String args[]) {
 		Connection con = avaaYhteys();
