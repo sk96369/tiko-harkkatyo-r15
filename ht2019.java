@@ -420,7 +420,7 @@ public class ht2019{
 		//Asetetaan lähetyspäiväksi nyk. päivämärä
 		Date lahetyspvm = new Date();
 		//Valitaan eräpäivä
-		System.out.println("Anna eräpäivä yyyy-dd-mm):");
+		System.out.println("Anna eräpäivä yyyy-mm-dd):");
 		Date erapvm=inputManager.readDate();
 		Integer laskuid=uusiID(con, "lasku", "laskuid");
 		//Muutetaan päivämäärät sql.date-tyyppiseksi
@@ -976,11 +976,11 @@ public class ht2019{
 				while(eraantyneetRs.next())
 				{
 					int edeltava = -1;
-					ArrayList.add(new int[]{eraantyneetRs.getInt("id"), eraantyneetRs.getInt("el"), eraantyneetRs.getInt("ml"));
+					tiedot.add(new int[]{eraantyneetRs.getInt("id"), eraantyneetRs.getInt("el"), eraantyneetRs.getInt("ml")});
 				}
 				pst.close();
 				eraantyneetRs.close();
-				return taulukko;
+				return tiedot;
 			}
 			// Palautetaan null-arvo, jos erääntyneitä laskuja ei löytynyt
 			else
@@ -991,28 +991,33 @@ public class ht2019{
 		{
 			System.out.println("Tapahtui virhe: " + e);
 		}
+		return null;
 	}
 	
 	/* (Toiminto 3 ja 4)
 	Metodi, joka kutsuu tuntityölaskun muodostusmetodia jos
-	erääntynyttä laskua ei ole vielä luotu, sekä palauttaa siinä tapauksessa totuusarvon true.
-	public static boolean luoEraantynytlasku(Connection con, int id, int el, int ml)*/
+	erääntynyttä laskua ei ole vielä luotu, sekä palauttaa siinä tapauksessa totuusarvon true.*/
+	public static boolean luoEraantynytlasku(Connection con, int id, int el, int ml)
 	{
-		boolean loytyy = true;
-		PreparedStatement pst = con.prepareStatement("SELECT COUNT(*) AS lkm FROM lasku WHERE edeltävälasku = ?");
-		pst.setInt(1, el);
-		ResultSet tarkistusRs = pst.executeQuery();
-		while(kaikkiRs.next())
-		{
-			// Verrataan edeltävää laskua
-			if(tarkistusRs.getInt("lkm") = 0)
+		try{
+			PreparedStatement pst = con.prepareStatement("SELECT COUNT(*) AS lkm FROM lasku WHERE edeltävälasku = ?");
+			pst.setInt(1, el);
+			ResultSet tarkistusRs = pst.executeQuery();
+			while(tarkistusRs.next())
 			{
-				muodostaTuntityolasku(con, id, el, ml);
-				return true;
+				// Verrataan edeltävää laskua
+				if(tarkistusRs.getInt("lkm") == 0)
+				{
+					muodostaTuntityolasku(con, id, el, ml);
+					return true;
+				}	
 			}
 		}
-		else
-			return false;
+		catch(SQLException e)
+		{
+			System.out.println("Tapahtui virhe: " + e);
+		}
+		return false;
 	}
 
 	public static void main(String args[]) {

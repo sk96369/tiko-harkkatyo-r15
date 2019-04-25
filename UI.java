@@ -1,6 +1,8 @@
 /* Luokka syötteen lukemiseen ja tulosteen tulostamiseen*/
 
+import java.util.*;
 import java.io.*;
+import java.sql.*;
 
 public class UI
 {	
@@ -23,7 +25,7 @@ public class UI
 	{
 		while(kaynnissa)
 		{
-			System.out.print("Syötä komento:");
+			System.out.print("\nSyötä komento:");
 			try
 			{
 				lueSyote();
@@ -59,10 +61,6 @@ public class UI
 		int tunnus = 0;
 		switch(s)
 		{
-			// Pelkällä Enterin painalluksella tulostaa tyhjän rivin
-			case "":
-				System.out.println("");
-				break;
 			case "päivitä hinnasto":
 				ht2019.paivitaTarvikeHinnasto(con, "hinnasto.txt");
 				break;
@@ -92,8 +90,8 @@ public class UI
 				break;
 			case "luo hinta-arvio":
 				System.out.println("\nValitse työkohde:");
-				tulostaKysely(con, "select*from työkohde");
-				tunnus = typeCaster.toInt(valitse(con, "työkohde", "kohdeid", false));
+				ht2019.tulostaKysely(con, "select*from työkohde");
+				tunnus = typeCaster.toInt(ht2019.valitse(con, "työkohde", "kohdeid", false));
 				ht2019.muodostaHintaArvio(con, tunnus);
 				break;
 			case "help":
@@ -101,7 +99,7 @@ public class UI
 				break;
 			case "luo muistutuslaskut":
 				System.out.println("Haetaan erääntyneet laskut...");
-				int[] eraantyneidenTunnukset = ht2019.haeEraantyneetLaskut(con);
+				ArrayList<int[]> eraantyneidenTunnukset = ht2019.haeEraantyneetLaskut(con);
 				if(eraantyneidenTunnukset == null)
 				{
 					System.out.println("Erääntyneitä laskuja ei löytynyt.");
@@ -109,16 +107,16 @@ public class UI
 				else
 				{
 					int lkm = 0;
-					for(int index = 0;index < eraantyneidenTunnukset.length;index++)
+					for(int i = 0;i < eraantyneidenTunnukset.size();i++)
 					{
-						int[] lista = eraantyneidenTunnukset.get(index);
+						int[] lista = eraantyneidenTunnukset.get(i);
 						if(ht2019.luoEraantynytlasku(con, lista[0], lista[1], lista[2]))
 							lkm++;
 					}
 					if(lkm == 0)
 						System.out.println("Erääntyneitä laskuja ei löytynyt");
 					else
-						System.out.println("Löydettiin " + eraantyneidenTunnukset.length + " erääntynyttä laskua, muistutus- ja karhulaskut luotu");
+						System.out.println("Löydettiin " + eraantyneidenTunnukset.size() + " erääntynyttä laskua, muistutus- tai karhulaskut luotu");
 					 
 				}
 				break;
