@@ -63,6 +63,9 @@ public class UI
 			case "":
 				System.out.println("");
 				break;
+			case "päivitä hinnasto":
+				ht2019.paivitaTarvikeHinnasto(con, "hinnasto.txt");
+				break;
 			case "kysely":
 				System.out.println("Syötä SQL-kysely:");
 				System.out.print("psql=>");
@@ -79,22 +82,18 @@ public class UI
 				ht2019.lisaaUrakkasopimusTietokantaan(con);
 				break;
 			case "lisää tarvike":
-				System.out.println("Syötä suoritteen tunnus: [numero 0-*]");
-				tunnus = inputManager.readInt();
-				ht2019.lisaaTarvikeSuoritteeseen(con, tunnus);
+				ht2019.lisaaTarvikeKohteeseen(con);
 				break;
 			case "lisää tuntityösuorite":
 				ht2019.lisaaTuntityosuorite(con);
 				break;
-			case "luo lasku":
-				System.out.println("Syötä tuntityölaskun kohteen tunnus: ");
-				tunnus = inputManager.readInt();
-				ht2019.muodostaTuntityolasku(con, tunnus, null, 1);
+			case "muodosta tuntityölasku":
+				ht2019.muodostaTuntityolasku(con);
 				break;
-			case "arvioi hinta":
-				System.out.println("Syötä arvioitavan kohteen tunnus:");
-				System.out.print("ID = ");
-				tunnus = inputManager.readInt();
+			case "luo hinta-arvio":
+				System.out.println("\nValitse työkohde:");
+				tulostaKysely(con, "select*from työkohde");
+				tunnus = typeCaster.toInt(valitse(con, "työkohde", "kohdeid", false));
 				ht2019.muodostaHintaArvio(con, tunnus);
 				break;
 			case "help":
@@ -103,18 +102,24 @@ public class UI
 			case "luo muistutuslaskut":
 				System.out.println("Haetaan erääntyneet laskut...");
 				int[] eraantyneidenTunnukset = ht2019.haeEraantyneetLaskut(con);
-				if(eraantyneidenTunnukset != null)
+				if(eraantyneidenTunnukset == null)
 				{
 					System.out.println("Erääntyneitä laskuja ei löytynyt.");
 				}
 				else
 				{
-					System.out.println("Löydettiin " + eraantyneidenTunnukset.length + " erääntynyttä laskua, luodaan muistutuslaskut...");
+					int lkm = 0;
 					for(int index = 0;index < eraantyneidenTunnukset.length;index++)
 					{
-						
+						int[] lista = eraantyneidenTunnukset.get(index);
+						if(ht2019.luoEraantynytlasku(con, lista[0], lista[1], lista[2]))
+							lkm++;
 					}
-					ht2019.muodostaTuntityolasku(con, 
+					if(lkm == 0)
+						System.out.println("Erääntyneitä laskuja ei löytynyt");
+					else
+						System.out.println("Löydettiin " + eraantyneidenTunnukset.length + " erääntynyttä laskua, muistutus- ja karhulaskut luotu");
+					 
 				}
 				break;
 			case "lopeta":
@@ -130,6 +135,6 @@ public class UI
 	/* Metodi, joka tulostaa jokaisen sen tunnistaman komennon */
 	private void tulostaOhjeet()
 	{
-		System.out.println("lisää työkohde\nlisää asiakas\nlisää urakkasopimus\nlisää tarvike\nlisää tuntityösuorite\nluo lasku\nluo muistutuslaskut\nkysely\nlopeta");
+		System.out.println("lisää työkohde\nlisää asiakas\nlisää urakkasopimus\nlisää tarvike\nlisää tuntityösuorite\nmuodosta tuntityölasku\nluo muistutuslaskut\nlopeta");
 	}
 }
