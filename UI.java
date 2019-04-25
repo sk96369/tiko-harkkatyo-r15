@@ -133,6 +133,6 @@ public class UI
 	/* Metodi, joka tulostaa jokaisen sen tunnistaman komennon */
 	private void tulostaOhjeet()
 	{
-		System.out.println("lisää työkohde\nlisää asiakas\nlisää urakkasopimus\nlisää tarvike\nlisää tuntityösuorite\nluo hinta-arvio\nmuodosta tuntityölasku\nluo muistutuslaskut\nlopeta");
+		System.out.println("päivitä hinnasto\nlisää työkohde\nlisää asiakas\nlisää urakkasopimus\nlisää tarvike\nlisää tuntityösuorite\nluo hinta-arvio\nmuodosta tuntityölasku\nluo muistutuslaskut\nlopeta");
 	}
 }
